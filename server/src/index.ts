@@ -105,7 +105,11 @@ app.get('/api/admin/audit-logs', async (req, res) => {
 
 // Fallback for SPA (Single Page Application)
 if (process.env.NODE_ENV === 'production' || process.argv.includes('--serve-client')) {
-    app.get(/^(?!\/api).+/, (req, res) => {
+    app.get('*', (req, res) => {
+        // Don't intercept API routes
+        if (req.path.startsWith('/api')) {
+             return res.status(404).json({ error: 'API route not found' });
+        }
         res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
     });
 } else {
