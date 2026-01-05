@@ -110,7 +110,8 @@ export interface SiteConfig {
   };
 }
 
-const DB_FILE = path.join(__dirname, 'db_data.json');
+const DB_PATH = process.env.DATA_DIR || __dirname;
+const DB_FILE = path.join(DB_PATH, 'db_data.json');
 
 class MockDB {
   private clinics: Clinic[] = [

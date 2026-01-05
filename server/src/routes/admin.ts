@@ -124,7 +124,8 @@ router.post('/site-config/logo', async (req, res) => {
   const { image_base64 } = req.body;
   if (!image_base64) return res.status(400).json({ error: 'image_base64 required' });
   try {
-    const uploadsRoot = path.resolve(process.cwd(), 'uploads');
+    const DATA_DIR = process.env.DATA_DIR || process.cwd();
+    const uploadsRoot = path.resolve(DATA_DIR, 'uploads');
     const siteDir = path.join(uploadsRoot, 'site');
     if (!fs.existsSync(uploadsRoot)) fs.mkdirSync(uploadsRoot);
     if (!fs.existsSync(siteDir)) fs.mkdirSync(siteDir);

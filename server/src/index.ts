@@ -35,7 +35,8 @@ app.use(helmet());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-const uploadsRoot = path.resolve(process.cwd(), 'uploads');
+const DATA_DIR = process.env.DATA_DIR || process.cwd();
+const uploadsRoot = path.resolve(DATA_DIR, 'uploads');
 if (!fs.existsSync(uploadsRoot)) fs.mkdirSync(uploadsRoot);
 app.use('/uploads', express.static(uploadsRoot));
 
