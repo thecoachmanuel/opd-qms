@@ -4,6 +4,17 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import path from 'path';
+import fs from 'fs';
+import { randomBytes } from 'crypto';
+import { db } from './models/mockDb';
+import appointmentRoutes from './routes/appointments';
+import { queueRouter } from './routes/queue';
+import clinicsRouter from './routes/clinics';
+import adminRouter from './routes/admin';
+import authRouter from './routes/auth';
+import usersRouter from './routes/users';
+import { NotificationService } from './services/notification';
 
 dotenv.config();
 
@@ -17,12 +28,6 @@ const io = new Server(httpServer, {
 });
 
 const PORT = process.env.PORT || 5000;
-
-import { createTables } from './models/schema';
-
-import path from 'path';
-import fs from 'fs';
-import { randomBytes } from 'crypto';
 
 // Middleware
 app.use(cors());
@@ -42,16 +47,6 @@ if (process.env.NODE_ENV === 'production' || process.argv.includes('--serve-clie
     console.log(`Serving static files from: ${clientBuildPath}`);
 }
 
-import appointmentRoutes from './routes/appointments';
-import { queueRouter } from './routes/queue';
-import clinicsRouter from './routes/clinics';
-import adminRouter from './routes/admin';
-import authRouter from './routes/auth';
-import usersRouter from './routes/users';
-import { NotificationService } from './services/notification';
-
-// Initialize DB
-// createTables();
 
 // Routes
 app.use('/api/appointments', appointmentRoutes);
@@ -121,8 +116,6 @@ if (process.env.NODE_ENV === 'production' || process.argv.includes('--serve-clie
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
-
-import { db } from './models/mockDb';
 
 // Helper to get stats for socket broadcast
 async function getQueueStats(clinicId: string) {
