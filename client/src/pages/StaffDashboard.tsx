@@ -20,6 +20,13 @@ export const StaffDashboard: React.FC = () => {
         }
     }, [selectedClinic]);
     
+    // Update selected clinic if user's assigned clinic changes
+    useEffect(() => {
+        if (user?.clinic_id) {
+            setSelectedClinic(user.clinic_id);
+        }
+    }, [user?.clinic_id]);
+    
     
 
     // Check-in Form

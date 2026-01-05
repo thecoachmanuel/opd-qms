@@ -18,6 +18,13 @@ export const DoctorDashboard: React.FC = () => {
             localStorage.setItem('doctor_dashboard_selected_clinic', selectedClinic);
         }
     }, [selectedClinic]);
+
+    // Update selected clinic if user's assigned clinic changes
+    useEffect(() => {
+        if (user?.clinic_id) {
+            setSelectedClinic(user.clinic_id);
+        }
+    }, [user?.clinic_id]);
     const [patientDetails, setPatientDetails] = useState<any>(null);
     const [patientHistory, setPatientHistory] = useState<any[]>([]);
     const [notes, setNotes] = useState('');

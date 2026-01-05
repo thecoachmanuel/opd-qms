@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface UserData { id: string; username: string; full_name?: string; role: 'admin'|'staff'|'doctor'; clinic_id?: string|null }
+import { getUserById } from '../services/api';
+
+interface UserData { id: string; username: string; full_name?: string; role: 'admin'|'staff'|'doctor'; clinic_id?: string|null; profile_image?: string|null }
 interface AuthContextType {
   user: UserData | null;
   login: (user: UserData) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -30,8 +33,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('opd_user');
   };
 
+  const refreshUser = async () => {
+    if (!user?.id) return;
+    try {
+      const updatedUser = await getUserById(user.id);
+      // Preserve existing fields if not returned, but API returns full object usually
+      // Ensure we map the API response to UserData correctly
+      const newData: UserData = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        full_name: updatedUser.full_name,
+        role: updatedUser.role,
+        clinic_id: updatedUser.clinic_id,
+        profile_image: updatedUser.profile_image
+      };
+      setUser(newData);
+      localStorage.setItem('opd_user', JSON.stringify(newData));
+    } catch (err) {
+      console.error('Failed to refresh user data', err);
+    }
+  };
+
+  // Refresh user data on mount to ensure roles/clinics are up to date
+  useEffect(() => {
+    if (user?.id) {
+      refreshUser();
+    }
+  }, []); // Run once on mount if user exists
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, refreshUser, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
