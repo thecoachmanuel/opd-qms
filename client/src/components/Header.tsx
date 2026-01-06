@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Activity, LogOut, Menu, X, ChevronDown, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSiteSettings } from '../context/SiteSettingsContext';
@@ -8,6 +8,7 @@ export const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { config } = useSiteSettings();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -37,6 +38,7 @@ export const Header: React.FC = () => {
 
   // If in fullscreen mode, do not render the header
   if (isFullscreen) return null;
+  if (location.pathname.startsWith('/display')) return null;
 
   const MobileNavLinks = () => (
     <>

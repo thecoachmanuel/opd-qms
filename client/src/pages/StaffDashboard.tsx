@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { getClinics, getQueueStatus, checkIn, updateQueueStatus, SOCKET_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -19,13 +20,6 @@ export const StaffDashboard: React.FC = () => {
             localStorage.setItem('staff_dashboard_selected_clinic', selectedClinic);
         }
     }, [selectedClinic]);
-    
-    // Update selected clinic if user's assigned clinic changes
-    useEffect(() => {
-        if (user?.clinic_id) {
-            setSelectedClinic(user.clinic_id);
-        }
-    }, [user?.clinic_id]);
     
     
 
@@ -49,6 +43,12 @@ export const StaffDashboard: React.FC = () => {
             })
             .finally(() => setLoading(false));
     }, []);
+
+    useEffect(() => {
+        if (user?.clinic_id) {
+            setSelectedClinic(user.clinic_id);
+        }
+    }, [user?.clinic_id]);
 
     useEffect(() => {
         if (!selectedClinic) return;
@@ -118,6 +118,21 @@ export const StaffDashboard: React.FC = () => {
     const waitingQueue = queue.filter(q => q.status === 'waiting');
     const servingQueue = queue.filter(q => q.status === 'serving');
 
+    const ticketStyle = (id?: string) => {
+        switch (id) {
+            case '1':
+                return 'text-green-700';
+            case '2':
+                return 'text-blue-700';
+            case '3':
+                return 'text-orange-700';
+            case '4':
+                return 'text-purple-700';
+            default:
+                return 'text-teal-700';
+        }
+    };
+
     if (!selectedClinic) {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -170,6 +185,16 @@ export const StaffDashboard: React.FC = () => {
                             <UserPlus className="h-5 w-5 mr-2" />
                             Walk-in Check-in
                         </button>
+                        {selectedClinic && (
+                          <Link
+                            to={`/display/${selectedClinic}`}
+                            target="_blank"
+                            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            aria-label="Open Assigned Clinic Display"
+                          >
+                            Open Clinic Display
+                          </Link>
+                        )}
                     </div>
                 </div>
 
@@ -201,7 +226,7 @@ export const StaffDashboard: React.FC = () => {
                                         <div className="flex justify-between items-start mb-6">
                                             <div>
                                                 <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Current Patient</span>
-                                                <span className="text-5xl font-bold text-gray-900 block mt-1">{item.ticket_number}</span>
+                                                <span className={`text-5xl font-bold block mt-1 ${ticketStyle(selectedClinic)}`}>{item.ticket_number}</span>
                                                 <span className="text-lg text-gray-700 mt-2 block">{item.patient_name || 'Anonymous'}</span>
                                             </div>
                                             <div className="bg-white px-3 py-1 rounded-full text-sm font-medium text-green-800 border border-green-200 shadow-sm">
@@ -241,7 +266,7 @@ export const StaffDashboard: React.FC = () => {
                                 {waitingQueue.map((item) => (
                                     <li key={item.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
                                         <div>
-                                            <span className="text-xl font-bold text-gray-900 block">{item.ticket_number}</span>
+                                            <span className={`text-xl font-bold block ${ticketStyle(selectedClinic)}`}>{item.ticket_number}</span>
                                             <span className="text-sm text-gray-500">{item.patient_name || 'Anonymous'}</span>
                                             <span className="text-xs text-gray-400 ml-2">Arrived: {new Date(item.arrival_time).toLocaleTimeString()}</span>
                                         </div>
