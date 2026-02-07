@@ -70,8 +70,8 @@ export const SiteSettingsEditor: React.FC = () => {
       </div>
 
       <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          {['hero', 'header', 'footer', 'meta'].map((section) => (
+        <nav className="-mb-px flex space-x-8 overflow-x-auto">
+          {['hero', 'header', 'footer', 'meta', 'location'].map((section) => (
             <button
               key={section}
               onClick={() => setActiveSection(section as any)}
@@ -370,6 +370,54 @@ export const SiteSettingsEditor: React.FC = () => {
                 onChange={e => handleChange('meta', 'keywords', e.target.value)}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
               />
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'location' && (
+          <div className="grid grid-cols-1 gap-6">
+            <div className="bg-blue-50 p-4 rounded-md mb-4">
+                <p className="text-sm text-blue-700">
+                    These settings control the geofencing for self-check-in. 
+                    Patients must be within the specified radius of the hospital coordinates to check in.
+                </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Hospital Latitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={formData.location?.latitude || 0}
+                    onChange={e => handleNumberChange('location', 'latitude', e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">e.g., 6.596512</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Hospital Longitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={formData.location?.longitude || 0}
+                    onChange={e => handleNumberChange('location', 'longitude', e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                  />
+                   <p className="mt-1 text-xs text-gray-500">e.g., 3.355321</p>
+                </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Geofence Radius (km)</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0.1"
+                max="50"
+                value={formData.location?.radius_km || 0.5}
+                onChange={e => handleNumberChange('location', 'radius_km', e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500">The maximum distance (in kilometers) a patient can be from the hospital to check in. Default is 0.5 km.</p>
             </div>
           </div>
         )}

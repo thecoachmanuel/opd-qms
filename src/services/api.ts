@@ -327,6 +327,11 @@ export interface SiteConfig {
     site_description: string;
     keywords: string;
   };
+  location?: {
+    latitude: number;
+    longitude: number;
+    radius_km: number;
+  };
 }
 
 export const getSiteConfig = async (): Promise<SiteConfig> => {
@@ -361,16 +366,31 @@ export const getSiteConfig = async (): Promise<SiteConfig> => {
         site_title: 'OPD Queue Management System',
         site_description: 'Efficient outpatient department queue management system.',
         keywords: 'hospital, queue, appointment, medical, health'
+      },
+      location: {
+        latitude: 6.5965,
+        longitude: 3.3553,
+        radius_km: 0.5
       }
     };
 
     try {
-        const { data, error } = await supabase.from('settings').select('site_config').single();
-        if (error || !data || !data.site_config) {
+        const { data, error } = await supabase.from('settings').select('*').single();
+        if (error || !data) {
             return defaultConfig;
         }
-        // Deep merge could be better, but simple spread is okay for now if structure is stable
-        return { ...defaultConfig, ...data.site_config };
+        
+        const siteConfig = data.site_config || {};
+        
+        return { 
+            ...defaultConfig, 
+            ...siteConfig,
+            location: {
+                latitude: data.hospital_latitude !== undefined ? data.hospital_latitude : defaultConfig.location?.latitude,
+                longitude: data.hospital_longitude !== undefined ? data.hospital_longitude : defaultConfig.location?.longitude,
+                radius_km: data.geofence_radius_km !== undefined ? data.geofence_radius_km : defaultConfig.location?.radius_km
+            }
+        };
     } catch (e) {
         console.warn('Failed to fetch site config, using default. Error:', e);
         return defaultConfig;
@@ -379,32 +399,57 @@ export const getSiteConfig = async (): Promise<SiteConfig> => {
 
 export const updateSiteConfig = async (updates: Partial<SiteConfig>) => {
     const current = await getSiteConfig();
-    // Deep merge updates
+    
+    // Separate location from other config
+    const { location, ...otherUpdates } = updates;
+    
+    // Deep merge updates for JSON config
     const newConfig = {
         ...current,
-        ...updates,
-        hero: { ...current.hero, ...(updates.hero || {}) },
-        header: { ...current.header, ...(updates.header || {}) },
-        footer: { ...current.footer, ...(updates.footer || {}) },
-        meta: { ...current.meta, ...(updates.meta || {}) },
+        ...otherUpdates,
+        hero: { ...current.hero, ...(otherUpdates.hero || {}) },
+        header: { ...current.header, ...(otherUpdates.header || {}) },
+        footer: { ...current.footer, ...(otherUpdates.footer || {}) },
+        meta: { ...current.meta, ...(otherUpdates.meta || {}) },
     };
+    
+    // Remove location from the JSON object we are about to save
+    const configToSave = { ...newConfig };
+    delete configToSave.location;
+
+    const dbUpdates: any = {
+        site_config: configToSave
+    };
+    
+    // Add location fields if they are being updated
+    if (location) {
+        dbUpdates.hospital_latitude = location.latitude;
+        dbUpdates.hospital_longitude = location.longitude;
+        dbUpdates.geofence_radius_km = location.radius_km;
+    } else if (updates.location) {
+         // If location was passed but might be partial? 
+         // For now assuming full object replacement for location or nothing
+    }
 
     const { data: existing } = await supabase.from('settings').select('id').single();
     
     if (existing) {
          const { error } = await supabase
             .from('settings')
-            .update({ site_config: newConfig })
+            .update(dbUpdates)
             .eq('id', existing.id);
          if (error) throw error;
     } else {
          const { error } = await supabase
             .from('settings')
-            .insert({ site_config: newConfig });
+            .insert(dbUpdates);
          if (error) throw error;
     }
 
-    return newConfig;
+    return {
+        ...newConfig,
+        location: location || current.location
+    };
 };
 
 export const ensureUserProfile = async (user: any) => {

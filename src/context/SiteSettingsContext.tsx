@@ -31,6 +31,11 @@ const defaultSiteConfig: SiteConfig = {
     site_title: 'OPD Queue Management System',
     site_description: 'Efficient outpatient department queue management system.',
     keywords: 'hospital, queue, appointment, medical, health'
+  },
+  location: {
+    latitude: 6.5965,
+    longitude: 3.3553,
+    radius_km: 0.5
   }
 };
 
