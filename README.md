@@ -1,73 +1,74 @@
-# React + TypeScript + Vite
+# LASUTH Queue Management System (QMS)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, high-fidelity queue management and appointment booking solution designed specifically for Lagos State University Teaching Hospital (LASUTH). This comprehensive web application streamlines patient flow, reduces waiting times, and enhances the overall healthcare service delivery experience through real-time automation and analytics.
 
-Currently, two official plugins are available:
+## 🚀 Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🏥 Clinic & Patient Management
+- **Online Appointment Booking:** Seamless interface for patients to book appointments with specific clinics.
+- **Smart Check-in System:** Staff-assisted check-in process to validate appointments and assign queue numbers.
+- **Multi-Clinic Support:** Scalable architecture supporting multiple specialized clinics and departments.
 
-## React Compiler
+### 👥 Role-Based Dashboards
+- **Admin Dashboard:** Centralized control center for managing clinics, users, system settings, and viewing comprehensive analytics (PDF exports supported).
+- **Doctor Dashboard:** Dedicated interface for clinicians to view their queue, call patients, and manage consultation status.
+- **Staff Dashboard:** Front-desk tools for checking in patients, managing the queue, and handling inquiries.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 📺 Real-Time Visualization
+- **Queue Display Board:** Public-facing display mode for waiting areas, showing current token numbers and serving counters in real-time.
+- **Live Status Tracking:** Real-time updates powered by Supabase, ensuring instant synchronization across all devices.
 
-## Expanding the ESLint configuration
+### 🛠 System Administration
+- **User Management:** Role-based access control (RBAC) for Admins, Doctors, and Staff.
+- **Site Settings:** Customizable branding, including logo uploads and clinic information.
+- **Audit Logs:** Detailed tracking of system activities for security and accountability.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 💻 Tech Stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Built with the latest modern web technologies for performance, scalability, and maintainability:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Frontend:** [React](https://reactjs.org/) (v18) with [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool:** [Vite](https://vitejs.dev/) for lightning-fast development and build capability
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) for a responsive, high-fidelity user interface
+- **Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL) for authentication, database, and real-time subscriptions
+- **State Management:** React Context API
+- **Charts & Reporting:** Recharts and jsPDF for data visualization and reporting
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## ⚙️ Installation & Setup
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd lasuthqms
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+3. **Environment Configuration**
+   Create a `.env` file in the root directory with your Supabase credentials:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. **Run Development Server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for Production**
+   ```bash
+   npm run build
+   ```
+
+## 🔒 Security
+
+- **Authentication:** Secure user authentication via Supabase Auth.
+- **Row Level Security (RLS):** Strict database policies ensuring users only access data relevant to their role and clinic.
+
+## 📄 License
+
+Internal proprietary software for Lagos State University Teaching Hospital.
