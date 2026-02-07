@@ -72,3 +72,5 @@ Built with the latest modern web technologies for performance, scalability, and 
 ## 📄 License
 
 Internal proprietary software for Lagos State University Teaching Hospital.
+
+This project is done by Coach Manuel. Contact me via +2348168882014 if you need my web development services
