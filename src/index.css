@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@layer base {
+  button, 
+  [type='button'], 
+  [type='reset'], 
+  [type='submit'],
+  a {
+    cursor: pointer;
+  }
+
+  button:active,
+  [role="button"]:active,
+  input[type="submit"]:active,
+  input[type="button"]:active,
+  a:not([href=""]):active {
+    transform: scale(0.98);
+    transition: transform 0.05s ease-in-out;
+  }
+}

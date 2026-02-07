@@ -1,6 +1,0 @@
-{
-  "watch": ["src"],
-  "ext": "ts,json",
-  "ignore": ["src/models/db_data.json"],
-  "exec": "ts-node src/index.ts"
-}
