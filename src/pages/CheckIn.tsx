@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { selfCheckIn, getQueueSettings } from '../services/api';
 import { CheckCircle, AlertCircle, MapPin, Navigation } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { getDistanceFromLatLonInKm, HOSPITAL_COORDS } from '../utils/geo';
 
 export const CheckIn: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState<'location' | 'ticket'>('location');
   const [ticket, setTicket] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -182,12 +184,14 @@ export const CheckIn: React.FC = () => {
                                 </p>
                             )}
                             
-                            <button 
-                                onClick={bypassLocation} 
-                                className="mt-3 w-full py-2 px-4 bg-gray-800 text-white rounded-md text-sm font-medium hover:bg-gray-900 transition flex items-center justify-center"
-                            >
-                                Simulate Location (Dev Mode)
-                            </button>
+                            {user?.role === 'admin' && (
+                                <button 
+                                    onClick={bypassLocation} 
+                                    className="mt-3 w-full py-2 px-4 bg-gray-800 text-white rounded-md text-sm font-medium hover:bg-gray-900 transition flex items-center justify-center"
+                                >
+                                    Simulate Location (Dev Mode)
+                                </button>
+                            )}
                         </div>
                     )}
 

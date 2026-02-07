@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getClinics, getSlots, bookAppointment } from '../services/api';
+import { getClinics, getSlots, bookAppointment, sendBookingConfirmationEmail } from '../services/api';
 import { Calendar, User, FileText, Phone, CheckCircle } from 'lucide-react';
 import QRCode from 'qrcode';
 import { format } from 'date-fns';
@@ -64,7 +64,8 @@ export const BookAppointment: React.FC = () => {
     setLoading(true);
     try {
         // Construct full timestamp for slotTime
-        const fullTimestamp = `${formData.date}T${formData.slotTime}:00`;
+        // Convert local time to ISO string (UTC) for the server
+        const fullTimestamp = new Date(`${formData.date}T${formData.slotTime}:00`).toISOString();
         
         const result = await bookAppointment({
             ...formData,
@@ -77,8 +78,23 @@ export const BookAppointment: React.FC = () => {
           const dataUrl = await QRCode.toDataURL(url, { width: 300, margin: 1 });
           setQrDataUrl(dataUrl);
         } catch {}
-    } catch (err) {
-        alert('Booking Failed. Please try again.');
+
+        // Send confirmation email (fire and forget)
+        if (formData.email) {
+            const clinic = clinics.find(c => c.id === formData.clinicId);
+            sendBookingConfirmationEmail({
+                email: formData.email,
+                fullName: formData.fullName,
+                ticketCode: result.appointment.ticket_code,
+                scheduledTime: fullTimestamp,
+                clinicName: clinic?.name || 'Hospital Clinic',
+                checkInUrl: url
+            });
+        }
+    } catch (err: any) {
+        console.error('Booking failed:', err);
+        const errorMsg = err.message || err.error_description || 'Unknown error occurred';
+        alert(`Booking Failed: ${errorMsg}. Please check your inputs and try again.`);
     } finally {
         setLoading(false);
     }
@@ -236,7 +252,6 @@ export const BookAppointment: React.FC = () => {
                             </div>
                             <input
                                 type="text"
-                                required
                                 className="focus:ring-green-600 focus:border-green-600 block w-full pl-10 sm:text-sm border-gray-300 rounded-md border py-2"
                                 placeholder="LAS-0000"
                                 value={formData.fileNo}

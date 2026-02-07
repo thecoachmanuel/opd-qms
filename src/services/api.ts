@@ -37,12 +37,21 @@ export const getSlots = async (clinicId: string, date: string) => {
     .neq('status', 'cancelled');
 
   // 3. Generate all slots based on active_hours
-  // Assuming active_hours format "08:00-17:00"
-  const [startStr, endStr] = (clinic.active_hours || "09:00-17:00").split('-');
+  // Assuming active_hours format "08:00 - 17:00" or "08:00-17:00"
+  const parts = (clinic.active_hours || "09:00-17:00").split('-');
+  const startStr = parts[0].trim();
+  const endStr = parts[1] ? parts[1].trim() : "17:00"; // Fallback if format is weird
+
   const slots = [];
-  let current = new Date(date + 'T' + startStr);
-  const end = new Date(date + 'T' + endStr);
+  let current = new Date(`${date}T${startStr}`);
+  const end = new Date(`${date}T${endStr}`);
   const interval = 15; // minutes
+
+  // Validation to prevent infinite loops or invalid dates
+  if (isNaN(current.getTime()) || isNaN(end.getTime()) || current >= end) {
+      console.error('Invalid active_hours for clinic:', clinic.active_hours);
+      return [];
+  }
 
   while (current < end) {
     const slotIso = current.toISOString();
@@ -66,47 +75,56 @@ export const getSlots = async (clinicId: string, date: string) => {
 // ---------------------
 
 export const bookAppointment = async (data: any) => {
-  // 1. Create/Find Patient (Implicit or Explicit?)
-  // For simplicity, let's assume we create a patient record if not exists or passed in
-  // In a real app, you might search by file_no first.
-  
-  let patientId = data.patientId;
-  
-  if (!patientId) {
-      // Create new patient
-      const { data: newPatient, error: pError } = await supabase
-        .from('patients')
-        .insert({
-            full_name: data.full_name,
-            phone: data.phone,
-            email: data.email,
-            file_no: `TMP-${Date.now()}` // Temporary file no generation
-        })
-        .select()
-        .single();
-      if (pError) throw pError;
-      patientId = newPatient.id;
+  // Use the secure RPC for public booking to handle patient creation and appointment booking atomically
+  // This bypasses RLS issues for anonymous users and handles "find or create" logic for patients
+  const { data: result, error } = await supabase.rpc('public_book_appointment', {
+      p_clinic_id: data.clinicId,
+      p_scheduled_time: data.slotTime,
+      p_patient_full_name: data.fullName,
+      p_patient_phone: data.phone,
+      p_patient_email: data.email || null,
+      p_patient_file_no: data.fileNo || null,
+      p_notify_sms: data.notifySms || false,
+      p_notify_email: data.notifyEmail || false
+  });
+
+  if (error) {
+      console.error('Booking failed:', error);
+      throw error;
   }
 
-  // 2. Create Appointment
-  const scheduledTime = new Date(`${data.date}T${data.time}`).toISOString();
-  const ticketCode = `TKT-${Math.floor(Math.random() * 10000)}`;
+  return {
+      appointment: {
+          id: result.appointment_id,
+          ticket_code: result.ticket_code,
+          scheduled_time: result.scheduled_time,
+          status: 'booked'
+      },
+      patient: {
+          id: result.patient_id,
+          file_no: result.file_no
+      }
+  };
+};
 
-  const { data: appointment, error: aError } = await supabase
-    .from('appointments')
-    .insert({
-        patient_id: patientId,
-        clinic_id: data.clinicId,
-        scheduled_time: scheduledTime,
-        ticket_code: ticketCode,
-        visit_type: 'scheduled',
-        status: 'booked'
-    })
-    .select()
-    .single();
-
-  if (aError) throw aError;
-  return appointment;
+export const sendBookingConfirmationEmail = async (data: {
+    email: string;
+    fullName: string;
+    ticketCode: string;
+    scheduledTime: string;
+    clinicName: string;
+    checkInUrl: string;
+}) => {
+    try {
+        const { error } = await supabase.functions.invoke('send-ticket', {
+            body: data
+        });
+        if (error) throw error;
+    } catch (err) {
+        console.error('Failed to send confirmation email:', err);
+        // We don't throw here because the booking itself was successful, 
+        // and we don't want to show a failure screen just because email failed.
+    }
 };
 
 export const getAllAppointments = async () => {
