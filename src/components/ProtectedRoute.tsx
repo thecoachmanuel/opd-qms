@@ -17,7 +17,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles 
   }
 
   // Check for pending approval
-  if (user && user.approved === false) {
+  if (user && user.approved !== true) {
     return <Navigate to="/awaiting-approval" replace />;
   }
 

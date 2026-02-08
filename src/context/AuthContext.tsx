@@ -89,9 +89,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
              username: meta.username || sessionUser.email?.split('@')[0] || 'user',
              full_name: meta.full_name || 'User',
              role: role,
-             clinic_id: meta.clinic_id,
+              clinic_id: meta.clinic_id,
              email: sessionUser.email,
-            profile_image: null,
+             profile_image: null,
              approved: typeof meta.approved === 'boolean' ? meta.approved : false // Fallback to false for strict security
          });
          
@@ -122,7 +122,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
              full_name: meta.full_name || 'User',
              role: (meta.role as 'admin' | 'staff' | 'doctor') || 'staff',
              clinic_id: meta.clinic_id,
-             email: sessionUser.email
+             email: sessionUser.email,
+             approved: typeof meta.approved === 'boolean' ? meta.approved : false
          });
       }
     } finally {
@@ -140,7 +141,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
              role: data.role,
              clinic_id: data.clinic_id,
              email: data.email,
-             profile_image: data.profile_image
+             profile_image: data.profile_image,
+             approved: data.approved
            });
            setIsLoading(false);
        }
