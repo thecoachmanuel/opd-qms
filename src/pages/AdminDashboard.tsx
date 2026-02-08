@@ -820,8 +820,8 @@ export const AdminDashboard: React.FC = () => {
                                                         <input 
                                                             type="color" 
                                                             className="h-10 w-20 p-1 border rounded" 
-                                                            value={clinicEdit.theme_color} 
-                                                            onChange={e=>setClinicEdit({...clinicEdit, theme_color: e.target.value})} 
+                                                            value={clinicEdit.theme_color || '#10B981'} 
+                                                            onChange={e=>setClinicEdit(prev => ({...prev, theme_color: e.target.value}))} 
                                                         />
                                                         <span className="text-sm text-gray-500">Theme Color</span>
                                                     </div>

@@ -620,14 +620,17 @@ export const adminSyncUsers = async () => {
 };
 
 export const getEmailByUsername = async (username: string) => {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('email')
-        .or(`username.eq.${username},email.eq.${username}`) // Try matching username or email
-        .single();
+    // Use the secure RPC function to bypass RLS for public username lookup
+    const { data, error } = await supabase.rpc('get_email_by_username', {
+        username_input: username
+    });
+
+    if (error) {
+        console.error('Error resolving username:', error);
+        throw error;
+    }
     
-    if (error) throw error;
-    return data?.email;
+    return data;
 };
 
 // Authentication
