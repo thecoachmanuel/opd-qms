@@ -502,7 +502,7 @@ export const ensureUserProfile = async (user: any) => {
         full_name: user.user_metadata?.full_name || 'System User',
         role: user.user_metadata?.role || 'staff',
         clinic_id: user.user_metadata?.clinic_id,
-        approved: true
+        approved: typeof user.user_metadata?.approved === 'boolean' ? user.user_metadata.approved : false
     });
 
     if (createError) {
@@ -803,7 +803,7 @@ export const authSignup = async (data: {
                 full_name: data.full_name,
                 role: data.role,
                 clinic_id: data.clinic_id,
-                approved: true
+                approved: isApproved
             }
         }
     });

@@ -35,22 +35,24 @@ export const Signup: React.FC = () => {
         email: form.email.trim(), 
         phone: form.phone.trim() || undefined 
       });
-      if (resp.approved) {
-        setMsg('Account created successfully! Redirecting to dashboard...');
-        
-        // Auto-login
+      if (resp) {
+        // Auto-login user (set AuthContext state)
         login(resp);
-        
-        // Redirect based on role
-        setTimeout(() => {
-          if (resp.role === 'admin') navigate('/admin');
-          else if (resp.role === 'staff') navigate('/staff');
-          else if (resp.role === 'doctor') navigate('/doctor');
-          else navigate('/');
-        }, 1500);
-      } else {
-        setMsg('Account created! Awaiting admin approval. Redirecting to login...');
-        setTimeout(()=>navigate('/login'), 2000);
+
+        if (resp.approved) {
+          setMsg('Account created successfully! Redirecting to dashboard...');
+          setTimeout(() => {
+            if (resp.role === 'admin') navigate('/admin');
+            else if (resp.role === 'staff') navigate('/staff');
+            else if (resp.role === 'doctor') navigate('/doctor');
+            else navigate('/');
+          }, 1500);
+        } else {
+          setMsg('Account created! Awaiting admin approval...');
+          // Redirect to Awaiting Approval page immediately (not login)
+          // ProtectedRoute would do this anyway, but explicit is better
+          setTimeout(() => navigate('/awaiting-approval'), 1500);
+        }
       }
       setForm({ username: '', full_name: '', role: 'staff', clinic_id: '', password: '', confirm: '', email: '', phone: '' });
     } catch (err: any) {
