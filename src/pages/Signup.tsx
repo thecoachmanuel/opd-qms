@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { authSignup, getClinics } from '../services/api';
 
 export const Signup: React.FC = () => {
@@ -8,6 +9,7 @@ export const Signup: React.FC = () => {
   const [msg, setMsg] = useState('');
   const [clinics, setClinics] = useState<any[]>([]);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     getClinics().then(setClinics).catch(()=>{});
@@ -34,12 +36,23 @@ export const Signup: React.FC = () => {
         phone: form.phone.trim() || undefined 
       });
       if (resp.approved) {
-        setMsg('Account created successfully! Redirecting to login...');
+        setMsg('Account created successfully! Redirecting to dashboard...');
+        
+        // Auto-login
+        login(resp);
+        
+        // Redirect based on role
+        setTimeout(() => {
+          if (resp.role === 'admin') navigate('/admin');
+          else if (resp.role === 'staff') navigate('/staff');
+          else if (resp.role === 'doctor') navigate('/doctor');
+          else navigate('/');
+        }, 1500);
       } else {
         setMsg('Account created! Awaiting admin approval. Redirecting to login...');
+        setTimeout(()=>navigate('/login'), 2000);
       }
       setForm({ username: '', full_name: '', role: 'staff', clinic_id: '', password: '', confirm: '', email: '', phone: '' });
-      setTimeout(()=>navigate('/login'), 2000);
     } catch (err: any) {
       console.error('Signup Error:', err);
       const msg = err.response?.data?.error || err.message || 'Signup failed';
