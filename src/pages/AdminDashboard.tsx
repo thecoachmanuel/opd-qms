@@ -27,7 +27,7 @@ export const AdminDashboard: React.FC = () => {
     const [logs, setLogs] = useState<any[]>([]);
     const [settings, setSettings] = useState<{ auto_approve_signups: boolean; hospital_location?: { latitude: number; longitude: number }; geofence_radius_km?: number }>({ auto_approve_signups: false, hospital_location: undefined, geofence_radius_km: 0.5 });
     const [doctorStats, setDoctorStats] = useState<Array<{ doctor_id: string; doctor_name: string; daily: number; weekly: number; monthly: number }>>([]);
-    const [clinicForm, setClinicForm] = useState({ name: '', location: '', active_hours: '' });
+    const [clinicForm, setClinicForm] = useState({ name: '', location: '', active_hours: '', theme_color: '#10B981' });
     const [userForm, setUserForm] = useState({ username: '', email: '', full_name: '', role: 'staff', password: '', confirm: '', clinic_id: '' });
     const [showCreatePwd, setShowCreatePwd] = useState(false);
     const [showCreateConfirm, setShowCreateConfirm] = useState(false);
@@ -36,7 +36,7 @@ export const AdminDashboard: React.FC = () => {
     const [userErrors, setUserErrors] = useState<{ username?: string; email?: string; full_name?: string; role?: string; password?: string; confirm?: string }>({});
     const [createUserError, setCreateUserError] = useState<string | null>(null);
     const [editingClinicId, setEditingClinicId] = useState<string | null>(null);
-    const [clinicEdit, setClinicEdit] = useState<{ name: string; location: string; active_hours: string }>({ name: '', location: '', active_hours: '' });
+    const [clinicEdit, setClinicEdit] = useState<{ name: string; location: string; active_hours: string; theme_color: string }>({ name: '', location: '', active_hours: '', theme_color: '' });
     const [clinicEditErrors, setClinicEditErrors] = useState<{ name?: string; location?: string; active_hours?: string }>({});
     const [editingUserId, setEditingUserId] = useState<string | null>(null);
     const [userEdit, setUserEdit] = useState<{ username: string; full_name?: string; role: string; clinic_id?: string; email?: string; phone?: string }>({ username: '', role: 'staff' });
@@ -766,6 +766,21 @@ export const AdminDashboard: React.FC = () => {
                                 {clinicErrors.location && (<div className="text-red-600 text-sm">{clinicErrors.location}</div>)}
                                 <input className={`w-full border rounded p-2 ${clinicErrors.active_hours?'border-red-500':''}`} placeholder="Active Hours (e.g. 08:00 - 16:00)" value={clinicForm.active_hours} onChange={e=>{setClinicForm({...clinicForm,active_hours:e.target.value}); if (e.target.value) setClinicErrors(prev=>({...prev,active_hours:undefined}));}} />
                                 {clinicErrors.active_hours && (<div className="text-red-600 text-sm">{clinicErrors.active_hours}</div>)}
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm text-gray-700">Theme Color:</label>
+                                    <input 
+                                        type="color" 
+                                        className="h-10 w-20 p-1 border rounded" 
+                                        value={clinicForm.theme_color} 
+                                        onChange={e=>setClinicForm({...clinicForm, theme_color: e.target.value})} 
+                                    />
+                                    <button 
+                                        className="text-sm text-blue-600 hover:underline"
+                                        onClick={()=>setClinicForm(prev=>({...prev, theme_color: getUniqueRandomColor()}))}
+                                    >
+                                        Generate Random
+                                    </button>
+                                </div>
                                 <button
                                   className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
                                   onClick={async()=>{
@@ -782,9 +797,9 @@ export const AdminDashboard: React.FC = () => {
                                       name: clinicForm.name.trim(),
                                       location: clinicForm.location.trim(),
                                       active_hours: clinicForm.active_hours.trim(),
-                                      theme_color: getUniqueRandomColor()
+                                      theme_color: clinicForm.theme_color || getUniqueRandomColor()
                                     });
-                                    setClinicForm({name:'',location:'',active_hours:''});
+                                    setClinicForm({name:'',location:'',active_hours:'', theme_color: getUniqueRandomColor()});
                                     loadAdminData();
                                   }}
                                 >Create</button>
@@ -797,10 +812,19 @@ export const AdminDashboard: React.FC = () => {
                                     <li key={c.id} className="py-3">
                                         {editingClinicId === c.id ? (
                                             <div className="space-y-3">
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <input className={`w-full border rounded p-2 ${clinicEditErrors.name?'border-red-500':''}`} value={clinicEdit.name} onChange={e=>{setClinicEdit({...clinicEdit,name:e.target.value}); if (e.target.value) setClinicEditErrors(prev=>({...prev,name:undefined}));}} placeholder="Name" />
                                                     <input className={`w-full border rounded p-2 ${clinicEditErrors.location?'border-red-500':''}`} value={clinicEdit.location} onChange={e=>{setClinicEdit({...clinicEdit,location:e.target.value}); if (e.target.value) setClinicEditErrors(prev=>({...prev,location:undefined}));}} placeholder="Location" />
                                                     <input className={`w-full border rounded p-2 ${clinicEditErrors.active_hours?'border-red-500':''}`} value={clinicEdit.active_hours} onChange={e=>{setClinicEdit({...clinicEdit,active_hours:e.target.value}); if (e.target.value) setClinicEditErrors(prev=>({...prev,active_hours:undefined}));}} placeholder="Active Hours" />
+                                                    <div className="flex items-center gap-2">
+                                                        <input 
+                                                            type="color" 
+                                                            className="h-10 w-20 p-1 border rounded" 
+                                                            value={clinicEdit.theme_color} 
+                                                            onChange={e=>setClinicEdit({...clinicEdit, theme_color: e.target.value})} 
+                                                        />
+                                                        <span className="text-sm text-gray-500">Theme Color</span>
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button className="px-3 py-1 bg-green-600 text-white rounded" onClick={async()=>{
@@ -812,9 +836,14 @@ export const AdminDashboard: React.FC = () => {
                                                         else if (!re.test(clinicEdit.active_hours.trim())) errors.active_hours = 'Use HH:MM - HH:MM';
                                                         setClinicEditErrors(errors);
                                                         if (Object.keys(errors).length > 0) return;
-                                                        await adminUpdateClinic(c.id, { name: clinicEdit.name.trim(), location: clinicEdit.location.trim(), active_hours: clinicEdit.active_hours.trim() });
+                                                        await adminUpdateClinic(c.id, { 
+                                                            name: clinicEdit.name.trim(), 
+                                                            location: clinicEdit.location.trim(), 
+                                                            active_hours: clinicEdit.active_hours.trim(),
+                                                            theme_color: clinicEdit.theme_color
+                                                        });
                                                         setEditingClinicId(null);
-                                                        setClinicEdit({ name: '', location: '', active_hours: '' });
+                                                        setClinicEdit({ name: '', location: '', active_hours: '', theme_color: '' });
                                                         loadAdminData();
                                                     }}>Save</button>
                                                     <button className="px-3 py-1 border rounded" onClick={()=>{setEditingClinicId(null); setClinicEditErrors({});}}>Cancel</button>
@@ -822,14 +851,17 @@ export const AdminDashboard: React.FC = () => {
                                             </div>
                                         ) : (
                                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                <div>
-                                                    <div className="font-semibold">{c.name}</div>
-                                                    <div className="text-sm text-gray-500">{c.location} • {c.active_hours}</div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full shadow-sm border border-gray-200" style={{ backgroundColor: c.theme_color || '#10B981' }} title="Display Theme Color"></div>
+                                                    <div>
+                                                        <div className="font-semibold">{c.name}</div>
+                                                        <div className="text-sm text-gray-500">{c.location} • {c.active_hours}</div>
+                                                    </div>
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     <a className="px-3 py-1 border rounded bg-green-50 text-green-700" href={`/display/${encodeURIComponent(c.name)}`} target="_blank" rel="noopener noreferrer">Screen Display</a>
                                                     <button className="px-3 py-1 border rounded" onClick={()=>{navigator.clipboard.writeText(`${window.location.origin}/display/${encodeURIComponent(c.name)}`); alert('Display link copied');}}>Copy Link</button>
-                                                    <button className="px-3 py-1 border rounded" onClick={()=>{setEditingClinicId(c.id); setClinicEdit({ name: c.name || '', location: c.location || '', active_hours: c.active_hours || '' });}}>Edit</button>
+                                                    <button className="px-3 py-1 border rounded" onClick={()=>{setEditingClinicId(c.id); setClinicEdit({ name: c.name || '', location: c.location || '', active_hours: c.active_hours || '', theme_color: c.theme_color || '#10B981' });}}>Edit</button>
                                                     <button className="px-3 py-1 border rounded text-red-600" onClick={async()=>{if(confirm('Delete clinic?')){await adminDeleteClinic(c.id); loadAdminData();}}}>Delete</button>
                                                 </div>
                                             </div>
@@ -1079,15 +1111,15 @@ export const AdminDashboard: React.FC = () => {
                                                 </div>
                                             </div>
                                         ) : (
-                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <Avatar srcPath={(u as any).profile_image} username={(u as any).full_name || u.username} size={40} />
-                                                        <div>
-                                                            <div className="font-semibold">{(u as any).full_name || u.username}</div>
-                                                            <div className="text-sm text-gray-500">{u.role} • {u.clinic_id ? (clinics.find((c:any)=>c.id===u.clinic_id)?.name || u.clinic_id) : 'No clinic'}</div>
-                                                            {(u as any).email && <div className="text-xs text-gray-500">{(u as any).email}</div>}
-                                                            {(u as any).phone && <div className="text-xs text-gray-500">{(u as any).phone}</div>}
-                                                            <div className="mt-1">
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                    <Avatar srcPath={(u as any).profile_image} username={(u as any).full_name || u.username} size={40} />
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-semibold truncate">{(u as any).full_name || u.username}</div>
+                                                        <div className="text-sm text-gray-500 truncate">{u.role} • {u.clinic_id ? (clinics.find((c:any)=>c.id===u.clinic_id)?.name || u.clinic_id) : 'No clinic'}</div>
+                                                        {(u as any).email && <div className="text-xs text-gray-500 truncate">{(u as any).email}</div>}
+                                                        {(u as any).phone && <div className="text-xs text-gray-500 truncate">{(u as any).phone}</div>}
+                                                        <div className="mt-1">
                                                                 {u.approved ? (
                                                                   <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700">Approved</span>
                                                                 ) : (
