@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { AIChatWidget } from './components/AIChatWidget';
 const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
 const BookAppointment = lazy(() => import('./pages/BookAppointment').then(m => ({ default: m.BookAppointment })));
 const QueueStatus = lazy(() => import('./pages/QueueStatus').then(m => ({ default: m.QueueStatus })));
@@ -88,6 +89,7 @@ function App() {
               </Suspense>
             </main>
           <Footer />
+          <AIChatWidget />
         </div>
       </Router>
       </SiteSettingsProvider>

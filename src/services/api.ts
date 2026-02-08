@@ -42,10 +42,11 @@ export const getSlots = async (clinicId: string, date: string) => {
   const startStr = parts[0].trim();
   const endStr = parts[1] ? parts[1].trim() : "17:00"; // Fallback if format is weird
 
-  const slots = [];
+  const slots: string[] = [];
   let current = new Date(`${date}T${startStr}`);
   const end = new Date(`${date}T${endStr}`);
   const interval = 15; // minutes
+  const now = new Date();
 
   // Validation to prevent infinite loops or invalid dates
   if (isNaN(current.getTime()) || isNaN(end.getTime()) || current >= end) {
@@ -54,6 +55,12 @@ export const getSlots = async (clinicId: string, date: string) => {
   }
 
   while (current < end) {
+    // Check if slot is in the past (only relevant if date is today)
+    if (current < now) {
+      current.setMinutes(current.getMinutes() + interval);
+      continue;
+    }
+
     const slotIso = current.toISOString();
     // Check if booked
     const isBooked = appointments?.some(app => {

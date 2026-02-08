@@ -199,6 +199,7 @@ export const BookAppointment: React.FC = () => {
                     <input
                       type="date"
                       required
+                      min={new Date().toISOString().split('T')[0]}
                       className="focus:ring-green-600 focus:border-green-600 block w-full pl-10 sm:text-sm border-gray-300 rounded-md border py-2"
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
