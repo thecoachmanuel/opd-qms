@@ -43,6 +43,9 @@ export const AdminDashboard: React.FC = () => {
     const [userEditErrors, setUserEditErrors] = useState<{ username?: string; full_name?: string; role?: string; email?: string; phone?: string }>({});
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'staff' | 'doctor'>('all');
+    const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'approved' | 'pending'>('all');
+    
+    const pendingCount = users.filter(u => !u.approved).length;
 
     const getUniqueRandomColor = useCallback(() => {
         const usedColors = new Set(clinics.map((c: any) => c.theme_color?.toUpperCase()));
@@ -383,7 +386,9 @@ export const AdminDashboard: React.FC = () => {
             (u.phone || '').toLowerCase().includes(userSearch.toLowerCase())
         );
         const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
-        return matchesSearch && matchesRole;
+        const matchesStatus = userStatusFilter === 'all' || 
+            (userStatusFilter === 'approved' ? u.approved : !u.approved);
+        return matchesSearch && matchesRole && matchesStatus;
     });
 
     const exportUsersCSV = () => {
@@ -457,7 +462,14 @@ export const AdminDashboard: React.FC = () => {
                     <div className="flex flex-wrap gap-2 w-full xl:w-auto">
                         <button onClick={() => setTab('analytics')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='analytics'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Analytics</button>
                         <button onClick={() => setTab('clinics')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='clinics'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Clinics</button>
-                        <button onClick={() => setTab('users')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='users'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Users</button>
+                        <button onClick={() => setTab('users')} className={`relative flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='users'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>
+                            Users
+                            {pendingCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    {pendingCount}
+                                </span>
+                            )}
+                        </button>
                         <button onClick={() => setTab('logs')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='logs'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Audit Logs</button>
                         <button onClick={() => setTab('site_config')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md flex items-center justify-center whitespace-nowrap ${tab==='site_config'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>
                             <Globe className="h-4 w-4 mr-2" />
@@ -993,6 +1005,15 @@ export const AdminDashboard: React.FC = () => {
                                             onChange={e => setUserSearch(e.target.value)}
                                         />
                                     </div>
+                                    <select 
+                                        className="border border-gray-300 rounded-md px-3 py-2"
+                                        value={userStatusFilter}
+                                        onChange={e => setUserStatusFilter(e.target.value as any)}
+                                    >
+                                        <option value="all">All Status</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="pending">Pending ({pendingCount})</option>
+                                    </select>
                                     <select 
                                         className="border border-gray-300 rounded-md px-3 py-2"
                                         value={userRoleFilter}

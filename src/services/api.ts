@@ -736,16 +736,11 @@ export const authLogin = async (email: string, password: string) => {
             throw profileError;
         }
         
-        // Check approval if needed (though RLS might handle visibility)
+        // Check approval
         if (profile.approved === false) {
-             // For development/demo purposes, we'll allow login but maybe log a warning.
-             // Or if strict security is needed, keep the throw.
-             // The user requested "Make sure other staff and doctors can login", so we bypass this check.
-             console.warn('Account pending approval, but allowing login per user request.');
-             
-             // const err: any = new Error('Account pending approval');
-             // err.response = { status: 403, data: { error: 'Account pending approval' } };
-             // throw err;
+             const err: any = new Error('Account pending approval');
+             err.response = { status: 403, data: { error: 'Account pending approval' } };
+             throw err;
         }
 
         return profile;
@@ -763,6 +758,17 @@ export const authSignup = async (data: {
     clinic_id: string;
     phone?: string;
 }) => {
+    // 0. Check Auto-Approve Setting
+    let isApproved = false;
+    try {
+        const { data: settings } = await supabase.from('settings').select('auto_approve_signups').single();
+        if (settings && settings.auto_approve_signups) {
+            isApproved = true;
+        }
+    } catch (e) {
+        console.warn('Failed to fetch settings for signup approval, defaulting to pending:', e);
+    }
+
     // 1. Sign up with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
@@ -795,7 +801,7 @@ export const authSignup = async (data: {
                     clinic_id: data.clinic_id,
                     email: data.email,
                     phone: data.phone,
-                    approved: true // Auto-approve all new signups for now
+                    approved: isApproved
                 })
                 .select()
                 .single();
@@ -813,7 +819,7 @@ export const authSignup = async (data: {
                     role: data.role,
                     clinic_id: data.clinic_id,
                     email: data.email,
-                    approved: true
+                    approved: isApproved
                  };
              }
             
@@ -828,7 +834,7 @@ export const authSignup = async (data: {
                 role: data.role,
                 clinic_id: data.clinic_id,
                 email: data.email,
-                approved: true
+                approved: isApproved
              };
         }
     }
