@@ -92,8 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
              clinic_id: meta.clinic_id,
              email: sessionUser.email,
             profile_image: null,
-            approved: typeof meta.approved === 'boolean' ? meta.approved : false // Fallback to false for strict security
-        });(auth success implies some level of trust, or let ProtectedRoute handle it)
+             approved: typeof meta.approved === 'boolean' ? meta.approved : false // Fallback to false for strict security
          });
          
          // Optional: Attempt to heal the profile in background
