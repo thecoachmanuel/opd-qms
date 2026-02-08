@@ -9,6 +9,7 @@ interface UserData {
   clinic_id?: string | null;
   email?: string; // Added email field
   profile_image?: string | null;
+  approved?: boolean;
 }
 
 interface AuthContextType {
@@ -71,7 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: data.role as 'admin' | 'staff' | 'doctor',
           clinic_id: data.clinic_id,
           email: data.email,
-          profile_image: data.profile_image
+          profile_image: data.profile_image,
+          approved: data.approved
         });
       } else {
          // If data is null or error occurred, ALWAYS try to fallback to metadata
