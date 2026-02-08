@@ -91,8 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
              role: role,
              clinic_id: meta.clinic_id,
              email: sessionUser.email,
-             profile_image: null,
-             approved: true // Fallback to true if using metadata (auth success implies some level of trust, or let ProtectedRoute handle it)
+            profile_image: null,
+            approved: typeof meta.approved === 'boolean' ? meta.approved : false // Fallback to false for strict security
+        });(auth success implies some level of trust, or let ProtectedRoute handle it)
          });
          
          // Optional: Attempt to heal the profile in background
@@ -105,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role: role,
                 clinic_id: meta.clinic_id,
                 email: sessionUser.email,
-                approved: true
+                approved: typeof meta.approved === 'boolean' ? meta.approved : false
              }).then(({ error: upsertErr }) => {
                  if (upsertErr) console.warn('AuthContext: Auto-heal failed', upsertErr);
              });

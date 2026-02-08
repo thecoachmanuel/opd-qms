@@ -836,15 +836,20 @@ export const AdminDashboard: React.FC = () => {
                                                         else if (!re.test(clinicEdit.active_hours.trim())) errors.active_hours = 'Use HH:MM - HH:MM';
                                                         setClinicEditErrors(errors);
                                                         if (Object.keys(errors).length > 0) return;
-                                                        await adminUpdateClinic(c.id, { 
-                                                            name: clinicEdit.name.trim(), 
-                                                            location: clinicEdit.location.trim(), 
-                                                            active_hours: clinicEdit.active_hours.trim(),
-                                                            theme_color: clinicEdit.theme_color
-                                                        });
-                                                        setEditingClinicId(null);
-                                                        setClinicEdit({ name: '', location: '', active_hours: '', theme_color: '' });
-                                                        loadAdminData();
+                                                        try {
+                                                            await adminUpdateClinic(c.id, { 
+                                                                name: clinicEdit.name.trim(), 
+                                                                location: clinicEdit.location.trim(), 
+                                                                active_hours: clinicEdit.active_hours.trim(),
+                                                                theme_color: clinicEdit.theme_color
+                                                            });
+                                                            setEditingClinicId(null);
+                                                            setClinicEdit({ name: '', location: '', active_hours: '', theme_color: '' });
+                                                            loadAdminData();
+                                                        } catch (err: any) {
+                                                            console.error('Failed to update clinic:', err);
+                                                            alert('Failed to update clinic: ' + (err.message || 'Unknown error'));
+                                                        }
                                                     }}>Save</button>
                                                     <button className="px-3 py-1 border rounded" onClick={()=>{setEditingClinicId(null); setClinicEditErrors({});}}>Cancel</button>
                                                 </div>

@@ -571,14 +571,42 @@ export const adminGetClinics = getClinics;
 
 export const adminCreateClinic = async (data: any) => {
     const { data: clinic, error } = await supabase.from('clinics').insert(data).select().single();
-    if (error) throw error;
+    
+    if (error) {
+        // Fallback: If theme_color column is missing, retry without it
+        if (data.theme_color && error.message?.includes('theme_color')) {
+            console.warn('theme_color column missing, retrying without it');
+            const { theme_color, ...rest } = data;
+            const { data: clinicRetry, error: errorRetry } = await supabase.from('clinics').insert(rest).select().single();
+            if (errorRetry) throw errorRetry;
+            
+            logAudit('create_clinic', { clinic_id: clinicRetry.id, name: rest.name });
+            return clinicRetry;
+        }
+        throw error;
+    }
+    
     logAudit('create_clinic', { clinic_id: clinic.id, name: data.name });
     return clinic;
 };
 
 export const adminUpdateClinic = async (id: string, data: any) => {
     const { data: clinic, error } = await supabase.from('clinics').update(data).eq('id', id).select().single();
-    if (error) throw error;
+    
+    if (error) {
+         // Fallback: If theme_color column is missing, retry without it
+         if (data.theme_color && error.message?.includes('theme_color')) {
+             console.warn('theme_color column missing, retrying without it');
+             const { theme_color, ...rest } = data;
+             const { data: clinicRetry, error: errorRetry } = await supabase.from('clinics').update(rest).eq('id', id).select().single();
+             if (errorRetry) throw errorRetry;
+             
+             logAudit('update_clinic', { clinic_id: id, updates: rest });
+             return clinicRetry;
+         }
+         throw error;
+    }
+    
     logAudit('update_clinic', { clinic_id: id, updates: data });
     return clinic;
 };
@@ -739,13 +767,6 @@ export const authLogin = async (email: string, password: string) => {
             throw profileError;
         }
         
-        // Check approval
-        if (profile.approved === false) {
-             const err: any = new Error('Account pending approval');
-             err.response = { status: 403, data: { error: 'Account pending approval' } };
-             throw err;
-        }
-
         return profile;
     }
     
@@ -782,6 +803,7 @@ export const authSignup = async (data: {
                 full_name: data.full_name,
                 role: data.role,
                 clinic_id: data.clinic_id,
+                approved: true
             }
         }
     });

@@ -15,6 +15,7 @@ const DoctorDashboard = lazy(() => import('./pages/DoctorDashboard').then(m => (
 const TrackQueue = lazy(() => import('./pages/TrackQueue').then(m => ({ default: m.TrackQueue })));
 const MyAppointments = lazy(() => import('./pages/MyAppointments').then(m => ({ default: m.MyAppointments })));
 const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
+const AwaitingApproval = lazy(() => import('./pages/AwaitingApproval').then(m => ({ default: m.AwaitingApproval })));
 import { AuthProvider } from './context/AuthContext';
 import { SiteSettingsProvider } from './context/SiteSettingsContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -51,6 +52,7 @@ function App() {
                 <Route path="/track-queue" element={<TrackQueue />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/awaiting-approval" element={<AwaitingApproval />} />
                 
                 {/* Public Queue Status (Personal) */}
                 <Route path="/queue/:clinicId" element={<QueueStatus />} />
