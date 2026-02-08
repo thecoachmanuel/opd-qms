@@ -73,14 +73,24 @@ export class SoundManager {
   public speak(text: string) {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
+    // Ensure voices are loaded (fix for some browsers)
+    if (this.voices.length === 0) {
+        this.loadVoices();
+    }
+
     // Cancel existing to prevent backlog
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     
     // Select Voice
-    // Prefer English female voices often sound clearer for announcements
-    const preferredVoice = this.voices.find(v => v.name.includes("Google US English")) || 
+    // Priority: Nigerian English -> British English -> Generic English
+    const preferredVoice = this.voices.find(v => v.lang === "en-NG") || 
+                           this.voices.find(v => v.name.includes("Nigeria")) ||
+                           this.voices.find(v => v.lang === "en-GB") || 
+                           this.voices.find(v => v.name.includes("British")) ||
+                           this.voices.find(v => v.name.includes("UK")) ||
+                           this.voices.find(v => v.name.includes("Google US English")) || 
                            this.voices.find(v => v.name.includes("Samantha")) ||
                            this.voices.find(v => v.lang === "en-US") || 
                            this.voices.find(v => v.lang.startsWith("en"));
@@ -89,7 +99,8 @@ export class SoundManager {
         utterance.voice = preferredVoice;
     }
 
-    utterance.rate = 0.9;
+    // Adjust rate and pitch to sound more natural/authoritative for announcements
+    utterance.rate = 0.9; // Slightly slower for clarity
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
 
