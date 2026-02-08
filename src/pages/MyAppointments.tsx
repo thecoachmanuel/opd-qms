@@ -4,7 +4,6 @@ import { Search, Calendar, Clock, User, AlertCircle, XCircle } from 'lucide-reac
 
 export const MyAppointments: React.FC = () => {
     const [query, setQuery] = useState('');
-    const [searchType, setSearchType] = useState<'ticket' | 'phone'>('phone');
     const [appointments, setAppointments] = useState<any[]>([]);
     const [searched, setSearched] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -16,6 +15,15 @@ export const MyAppointments: React.FC = () => {
 
         setLoading(true);
         try {
+            // Auto-detect search type
+            // Ticket codes usually contain letters (e.g. W-001, APP-123)
+            // Phone numbers are numeric (maybe with +, -, space)
+            const hasLetters = /[a-zA-Z]/.test(query);
+            const searchType = hasLetters ? 'ticket' : 'phone';
+            
+            // If searching by phone, maybe strip non-digits for better matching if backend expects clean numbers?
+            // For now, we'll pass as is since api uses ilike
+            
             const data = await searchAppointments(searchType, query);
             setAppointments(data);
             setSearched(true);
@@ -55,29 +63,6 @@ export const MyAppointments: React.FC = () => {
 
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
                     <form onSubmit={handleSearch} className="space-y-4">
-                        <div className="flex gap-4 mb-4">
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                                <input 
-                                    type="radio" 
-                                    name="searchType" 
-                                    checked={searchType === 'phone'} 
-                                    onChange={() => setSearchType('phone')}
-                                    className="text-green-600 focus:ring-green-500"
-                                />
-                                <span>Phone Number</span>
-                            </label>
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                                <input 
-                                    type="radio" 
-                                    name="searchType" 
-                                    checked={searchType === 'ticket'} 
-                                    onChange={() => setSearchType('ticket')}
-                                    className="text-green-600 focus:ring-green-500"
-                                />
-                                <span>Ticket Code</span>
-                            </label>
-                        </div>
-
                         <div className="flex gap-2">
                             <div className="relative flex-grow">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -87,7 +72,7 @@ export const MyAppointments: React.FC = () => {
                                     type="text"
                                     required
                                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                    placeholder={searchType === 'phone' ? "Enter your phone number..." : "Enter your ticket code (e.g. G-101)..."}
+                                    placeholder="Enter Ticket Code or Phone Number..."
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                 />
