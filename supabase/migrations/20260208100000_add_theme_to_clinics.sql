@@ -1,0 +1,1 @@
+ALTER TABLE clinics ADD COLUMN theme_color TEXT DEFAULT '#10B981';

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { authLogin } from '../services/api';
+import { authLogin, getEmailByUsername } from '../services/api';
 import { Lock, User } from 'lucide-react';
 
 export const Login: React.FC = () => {
@@ -18,7 +18,26 @@ export const Login: React.FC = () => {
     setError('');
     setPendingApproval(false);
     try {
-      const resp = await authLogin(email, password);
+      let loginEmail = email;
+      
+      // If input doesn't look like an email, try to resolve it as a username
+      if (!email.includes('@')) {
+          try {
+              const resolved = await getEmailByUsername(email);
+              if (resolved) {
+                  loginEmail = resolved;
+              } else {
+                  setError('Username not found');
+                  return;
+              }
+          } catch (e) {
+              console.warn('Failed to resolve username:', e);
+              setError('Username not found');
+              return;
+          }
+      }
+
+      const resp = await authLogin(loginEmail, password);
       login(resp);
       
       // Explicit role-based redirection
@@ -81,16 +100,16 @@ export const Login: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email or Username</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <User className="h-5 w-5 text-gray-400" />
               </div>
               <input
-                type="email"
+                type="text"
                 required
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
-                placeholder="Enter your email"
+                placeholder="Enter your email or username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />

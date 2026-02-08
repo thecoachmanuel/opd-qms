@@ -44,6 +44,24 @@ export const AdminDashboard: React.FC = () => {
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'staff' | 'doctor'>('all');
 
+    const getUniqueRandomColor = useCallback(() => {
+        const usedColors = new Set(clinics.map((c: any) => c.theme_color?.toUpperCase()));
+        let color = '';
+        let attempts = 0;
+        
+        do {
+            const letters = '0123456789ABCDEF';
+            color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            attempts++;
+            if (attempts > 100) break; 
+        } while (usedColors.has(color));
+        
+        return color;
+    }, [clinics]);
+
     const loadData = useCallback(async () => {
         try {
             const [apptData, queueData] = await Promise.all([
@@ -751,7 +769,8 @@ export const AdminDashboard: React.FC = () => {
                                     await adminCreateClinic({
                                       name: clinicForm.name.trim(),
                                       location: clinicForm.location.trim(),
-                                      active_hours: clinicForm.active_hours.trim()
+                                      active_hours: clinicForm.active_hours.trim(),
+                                      theme_color: getUniqueRandomColor()
                                     });
                                     setClinicForm({name:'',location:'',active_hours:''});
                                     loadAdminData();

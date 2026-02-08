@@ -619,6 +619,17 @@ export const adminSyncUsers = async () => {
     return data;
 };
 
+export const getEmailByUsername = async (username: string) => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('email')
+        .or(`username.eq.${username},email.eq.${username}`) // Try matching username or email
+        .single();
+    
+    if (error) throw error;
+    return data?.email;
+};
+
 // Authentication
 export const authLogin = async (email: string, password: string) => {
     let data: any;

@@ -21,6 +21,7 @@ export const QueueDisplay: React.FC = () => {
 
     const [clinicName, setClinicName] = useState('Loading...');
     const [clinicLocation, setClinicLocation] = useState('');
+    const [themeColor, setThemeColor] = useState('#10B981');
     // Use Ref to track last announced details to avoid stale state in callbacks/effects
     const lastAnnouncedRef = React.useRef<{ id: string, service_start_time: string } | null>(null);
     const [audioEnabled, setAudioEnabled] = useState(false);
@@ -36,27 +37,6 @@ export const QueueDisplay: React.FC = () => {
         }, 1000);
         return () => clearInterval(timer);
     }, []);
-
-    const getClinicColorTheme = (name: string) => {
-        const themes = [
-            { text: 'text-green-400', borderGlow: 'border-4 border-green-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]' },
-            { text: 'text-blue-400', borderGlow: 'border-4 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.3)]' },
-            { text: 'text-orange-400', borderGlow: 'border-4 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.3)]' },
-            { text: 'text-purple-400', borderGlow: 'border-4 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.3)]' },
-            { text: 'text-pink-400', borderGlow: 'border-4 border-pink-500 shadow-[0_0_50px_rgba(236,72,153,0.3)]' },
-            { text: 'text-cyan-400', borderGlow: 'border-4 border-cyan-500 shadow-[0_0_50px_rgba(6,182,212,0.3)]' },
-            { text: 'text-yellow-400', borderGlow: 'border-4 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.3)]' },
-            { text: 'text-rose-400', borderGlow: 'border-4 border-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.3)]' },
-        ];
-        let hash = 0;
-        const str = name || 'default';
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return themes[Math.abs(hash) % themes.length];
-    };
-
-    const theme = getClinicColorTheme(clinicName !== 'Loading...' ? clinicName : (paramClinicId || ''));
 
     const initAudio = async () => {
         await soundManager.initAudio();
@@ -101,6 +81,9 @@ export const QueueDisplay: React.FC = () => {
                      setResolvedClinicId(match.id);
                      setClinicName(match.name);
                      setClinicLocation(match.location);
+                     if (match.theme_color) {
+                         setThemeColor(match.theme_color);
+                     }
                  } else {
                      setClinicName('Clinic Not Found');
                      setResolvedClinicId(null);
@@ -253,7 +236,7 @@ export const QueueDisplay: React.FC = () => {
                     <span className="text-lg md:text-xl font-bold text-white">{config.header.site_name}</span>
                 </div>
                 <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                    <h1 className="text-xl md:text-4xl font-bold text-green-400">{clinicName}</h1>
+                    <h1 className="text-xl md:text-4xl font-bold" style={{ color: themeColor }}>{clinicName}</h1>
                     <div className="flex items-center gap-2 mt-1 md:mt-2">
                         <span className="text-gray-400 text-xs md:text-base">{clinicLocation}</span>
                         <span className={`h-2 w-2 md:h-3 md:w-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? "Live Connected" : "Disconnected"}></span>
@@ -285,15 +268,15 @@ export const QueueDisplay: React.FC = () => {
 
             <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
                 {/* NOW SERVING - MAIN FOCUS */}
-                <div className={`bg-gray-800 rounded-2xl md:rounded-3xl p-4 md:p-12 flex flex-col items-center justify-center ${theme.borderGlow} h-full overflow-hidden`}>
+                <div className={`bg-gray-800 rounded-2xl md:rounded-3xl p-4 md:p-12 flex flex-col items-center justify-center h-full overflow-hidden`} style={{ border: `4px solid ${themeColor}`, boxShadow: `0 0 50px ${themeColor}4D` }}>
                     <h2 className="text-2xl md:text-4xl font-light text-gray-400 uppercase tracking-widest mb-4 md:mb-8 text-center">Now Serving</h2>
                     
                     {serving ? (
                         <div className="text-center animate-pulse flex flex-col items-center justify-center flex-1">
-                            <div className={`text-7xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-black leading-none tracking-tighter ${theme.text}`}>
+                            <div className={`text-7xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-black leading-none tracking-tighter`} style={{ color: themeColor }}>
                                 {serving.ticket_number}
                             </div>
-                            <div className="text-xl md:text-4xl text-green-400 mt-4 font-medium break-words max-w-full px-4">
+                            <div className="text-xl md:text-4xl mt-4 font-medium break-words max-w-full px-4" style={{ color: themeColor }}>
                                 {serving.patient_name || 'Please Proceed to Room'}
                             </div>
                         </div>
@@ -311,7 +294,7 @@ export const QueueDisplay: React.FC = () => {
 
                 {/* UP NEXT LIST */}
                 <div className="bg-gray-800 rounded-2xl md:rounded-3xl p-4 md:p-8 border border-gray-700 flex flex-col h-full overflow-hidden">
-                    <h2 className="text-xl md:text-3xl font-light text-gray-400 uppercase tracking-widest mb-4 md:mb-8 pl-4 border-l-4 border-blue-500 flex-none">Up Next</h2>
+                    <h2 className="text-xl md:text-3xl font-light text-gray-400 uppercase tracking-widest mb-4 md:mb-8 pl-4 border-l-4 flex-none" style={{ borderColor: themeColor }}>Up Next</h2>
                     
                     <div className="flex-1 overflow-y-auto space-y-2 md:space-y-4 pr-2">
                         {waiting.length > 0 ? (
@@ -319,7 +302,7 @@ export const QueueDisplay: React.FC = () => {
                                 <div key={item.id} className="flex justify-between items-center bg-gray-700 p-3 md:p-6 rounded-xl">
                                     <div className="flex items-center">
                                         <span className="text-gray-500 font-mono text-base md:text-xl w-8 md:w-12">#{index + 1}</span>
-                                        <span className={`text-2xl md:text-4xl font-bold ${theme.text}`}>{item.ticket_number}</span>
+                                        <span className={`text-2xl md:text-4xl font-bold`} style={{ color: themeColor }}>{item.ticket_number}</span>
                                     </div>
                                     <span className="text-sm md:text-xl text-gray-300">
                                         Wait: ~{index * 15} min
