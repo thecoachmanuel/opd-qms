@@ -213,7 +213,7 @@ export const StaffDashboard: React.FC = () => {
                         </button>
                         {selectedClinic && (
                           <Link
-                            to={`/display/${selectedClinic}`}
+                            to={`/display/${selectedClinic ? encodeURIComponent(clinics.find(c => c.id === selectedClinic)?.name || selectedClinic) : ''}`}
                             target="_blank"
                             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                             aria-label="Open Assigned Clinic Display"
@@ -236,13 +236,13 @@ export const StaffDashboard: React.FC = () => {
                             {servingQueue.length > 0 ? (
                                 servingQueue.map(item => (
                                     <div key={item.id} className="bg-green-50 p-6 rounded-md">
-                                        <div className="flex justify-between items-start mb-6">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
                                             <div>
                                                 <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Current Patient</span>
                                                 <span className={`text-5xl font-bold block mt-1 ${ticketStyle(selectedClinic)}`}>{item.ticket_number}</span>
                                                 <span className="text-lg text-gray-700 mt-2 block">{item.patient_name || 'Anonymous'}</span>
                                             </div>
-                                            <div className="bg-white px-3 py-1 rounded-full text-sm font-medium text-green-800 border border-green-200 shadow-sm flex flex-col items-end">
+                                            <div className="bg-white px-3 py-1 rounded-full text-sm font-medium text-green-800 border border-green-200 shadow-sm flex flex-col items-end w-full sm:w-auto">
                                                 <span>In Consultation</span>
                                                 {item.profiles?.full_name && (
                                                     <span className="text-xs text-gray-500 mt-1">w/ {item.profiles.full_name}</span>
@@ -255,7 +255,7 @@ export const StaffDashboard: React.FC = () => {
                                         
                         
 
-                                        <div className="flex justify-end space-x-3">
+                                        <div className="flex flex-wrap justify-end gap-3">
                                             <button
                                                 onClick={() => handleStatusChange(item.id, 'serving')}
                                                 className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"

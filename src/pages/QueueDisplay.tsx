@@ -9,7 +9,8 @@ import { soundManager } from '../utils/sound';
 
 export const QueueDisplay: React.FC = () => {
     const { config } = useSiteSettings();
-    const { clinicId } = useParams<{ clinicId: string }>();
+    const { clinicId: paramClinicId } = useParams<{ clinicId: string }>();
+    const [resolvedClinicId, setResolvedClinicId] = useState<string | null>(null);
     const [queue, setQueue] = useState<any[]>([]);
     // Use Ref to keep track of queue state inside callbacks without dependency issues
     const queueRef = React.useRef<any[]>([]);
@@ -36,16 +37,26 @@ export const QueueDisplay: React.FC = () => {
         return () => clearInterval(timer);
     }, []);
 
-    // ... (Styles remain the same) ...
-    const ticketStyle = (id?: string) => {
-        switch (id) {
-            case '1': return { text: 'text-green-400', borderGlow: 'border-4 border-green-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]' };
-            case '2': return { text: 'text-blue-400', borderGlow: 'border-4 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.3)]' };
-            case '3': return { text: 'text-orange-400', borderGlow: 'border-4 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.3)]' };
-            case '4': return { text: 'text-purple-400', borderGlow: 'border-4 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.3)]' };
-            default: return { text: 'text-teal-400', borderGlow: 'border-4 border-teal-500 shadow-[0_0_50px_rgba(13,148,136,0.3)]' };
+    const getClinicColorTheme = (name: string) => {
+        const themes = [
+            { text: 'text-green-400', borderGlow: 'border-4 border-green-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]' },
+            { text: 'text-blue-400', borderGlow: 'border-4 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.3)]' },
+            { text: 'text-orange-400', borderGlow: 'border-4 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.3)]' },
+            { text: 'text-purple-400', borderGlow: 'border-4 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.3)]' },
+            { text: 'text-pink-400', borderGlow: 'border-4 border-pink-500 shadow-[0_0_50px_rgba(236,72,153,0.3)]' },
+            { text: 'text-cyan-400', borderGlow: 'border-4 border-cyan-500 shadow-[0_0_50px_rgba(6,182,212,0.3)]' },
+            { text: 'text-yellow-400', borderGlow: 'border-4 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.3)]' },
+            { text: 'text-rose-400', borderGlow: 'border-4 border-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.3)]' },
+        ];
+        let hash = 0;
+        const str = name || 'default';
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
+        return themes[Math.abs(hash) % themes.length];
     };
+
+    const theme = getClinicColorTheme(clinicName !== 'Loading...' ? clinicName : (paramClinicId || ''));
 
     const initAudio = async () => {
         await soundManager.initAudio();
@@ -73,21 +84,42 @@ export const QueueDisplay: React.FC = () => {
         }, 500);
     };
 
+    // Resolve Clinic ID/Name
+    useEffect(() => {
+        const resolveClinic = async () => {
+             if (!paramClinicId) return;
+             try {
+                 const clinics = await getClinics();
+                 // Try ID match first
+                 let match = clinics.find((c: any) => c.id === paramClinicId);
+                 // If not found, try name match (case-insensitive)
+                 if (!match) {
+                     match = clinics.find((c: any) => c.name.toLowerCase() === paramClinicId.toLowerCase());
+                 }
+                 
+                 if (match) {
+                     setResolvedClinicId(match.id);
+                     setClinicName(match.name);
+                     setClinicLocation(match.location);
+                 } else {
+                     setClinicName('Clinic Not Found');
+                     setResolvedClinicId(null);
+                 }
+             } catch (e) {
+                 console.error(e);
+                 setClinicName('Error Loading Clinic');
+             }
+        };
+        resolveClinic();
+    }, [paramClinicId]);
+
     // Initial Data Load
     useEffect(() => {
         const fetchInitialData = async () => {
-            if (clinicId) {
+            if (resolvedClinicId) {
                 try {
-                    // 1. Get Clinic Details
-                    const clinics = await getClinics();
-                    const currentClinic = clinics.find((c: any) => c.id === clinicId);
-                    if (currentClinic) {
-                        setClinicName(currentClinic.name);
-                        setClinicLocation(currentClinic.location);
-                    }
-
                     // 2. Get Queue
-                    const status = await getQueueStatus(clinicId);
+                    const status = await getQueueStatus(resolvedClinicId);
                     setQueue(status.queue);
                     setIsConnected(true);
                 } catch (err) {
@@ -97,15 +129,15 @@ export const QueueDisplay: React.FC = () => {
         };
 
         fetchInitialData();
-    }, [clinicId]);
+    }, [resolvedClinicId]);
 
     // Polling Backup to ensure instant updates even if Realtime misses an event
     useEffect(() => {
-        if (!clinicId) return;
+        if (!resolvedClinicId) return;
 
         const loadData = async () => {
             try {
-                const status = await getQueueStatus(clinicId);
+                const status = await getQueueStatus(resolvedClinicId);
                 setQueue(status.queue);
                 setIsConnected(true);
                 setLastUpdated(new Date().toLocaleTimeString());
@@ -129,11 +161,11 @@ export const QueueDisplay: React.FC = () => {
         // Poll every 100ms for near-instant updates
         const interval = setInterval(loadData, 100);
         return () => clearInterval(interval);
-    }, [clinicId, clinicLocation, audioEnabled]);
+    }, [resolvedClinicId, clinicLocation, audioEnabled]);
 
     // Supabase Realtime Subscription
     useEffect(() => {
-        if (!clinicId) return;
+        if (!resolvedClinicId) return;
 
         const channel = supabase
             .channel('queue-updates')
@@ -143,7 +175,7 @@ export const QueueDisplay: React.FC = () => {
                     event: '*',
                     schema: 'public',
                     table: 'queue',
-                    filter: `clinic_id=eq.${clinicId}`
+                    filter: `clinic_id=eq.${resolvedClinicId}`
                 },
                 (payload) => {
                     // Handle different events
@@ -187,7 +219,7 @@ export const QueueDisplay: React.FC = () => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [clinicId, clinicLocation, audioEnabled]); // Dependencies for closure values
+    }, [resolvedClinicId, clinicLocation, audioEnabled]); // Dependencies for closure values
 
     useEffect(() => {
         const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -253,12 +285,12 @@ export const QueueDisplay: React.FC = () => {
 
             <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
                 {/* NOW SERVING - MAIN FOCUS */}
-                <div className={`bg-gray-800 rounded-2xl md:rounded-3xl p-4 md:p-12 flex flex-col items-center justify-center ${ticketStyle(clinicId).borderGlow} h-full overflow-hidden`}>
+                <div className={`bg-gray-800 rounded-2xl md:rounded-3xl p-4 md:p-12 flex flex-col items-center justify-center ${theme.borderGlow} h-full overflow-hidden`}>
                     <h2 className="text-2xl md:text-4xl font-light text-gray-400 uppercase tracking-widest mb-4 md:mb-8 text-center">Now Serving</h2>
                     
                     {serving ? (
                         <div className="text-center animate-pulse flex flex-col items-center justify-center flex-1">
-                            <div className={`text-7xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-black leading-none tracking-tighter ${ticketStyle(clinicId).text}`}>
+                            <div className={`text-7xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-black leading-none tracking-tighter ${theme.text}`}>
                                 {serving.ticket_number}
                             </div>
                             <div className="text-xl md:text-4xl text-green-400 mt-4 font-medium break-words max-w-full px-4">
@@ -287,7 +319,7 @@ export const QueueDisplay: React.FC = () => {
                                 <div key={item.id} className="flex justify-between items-center bg-gray-700 p-3 md:p-6 rounded-xl">
                                     <div className="flex items-center">
                                         <span className="text-gray-500 font-mono text-base md:text-xl w-8 md:w-12">#{index + 1}</span>
-                                        <span className={`text-2xl md:text-4xl font-bold ${ticketStyle(clinicId).text}`}>{item.ticket_number}</span>
+                                        <span className={`text-2xl md:text-4xl font-bold ${theme.text}`}>{item.ticket_number}</span>
                                     </div>
                                     <span className="text-sm md:text-xl text-gray-300">
                                         Wait: ~{index * 15} min

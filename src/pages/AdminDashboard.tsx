@@ -796,8 +796,8 @@ export const AdminDashboard: React.FC = () => {
                                                     <div className="text-sm text-gray-500">{c.location} • {c.active_hours}</div>
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
-                                                    <a className="px-3 py-1 border rounded bg-green-50 text-green-700" href={`/display/${c.id}`} target="_blank" rel="noopener noreferrer">Screen Display</a>
-                                                    <button className="px-3 py-1 border rounded" onClick={()=>{navigator.clipboard.writeText(`${window.location.origin}/display/${c.id}`); alert('Display link copied');}}>Copy Link</button>
+                                                    <a className="px-3 py-1 border rounded bg-green-50 text-green-700" href={`/display/${encodeURIComponent(c.name)}`} target="_blank" rel="noopener noreferrer">Screen Display</a>
+                                                    <button className="px-3 py-1 border rounded" onClick={()=>{navigator.clipboard.writeText(`${window.location.origin}/display/${encodeURIComponent(c.name)}`); alert('Display link copied');}}>Copy Link</button>
                                                     <button className="px-3 py-1 border rounded" onClick={()=>{setEditingClinicId(c.id); setClinicEdit({ name: c.name || '', location: c.location || '', active_hours: c.active_hours || '' });}}>Edit</button>
                                                     <button className="px-3 py-1 border rounded text-red-600" onClick={async()=>{if(confirm('Delete clinic?')){await adminDeleteClinic(c.id); loadAdminData();}}}>Delete</button>
                                                 </div>
@@ -899,27 +899,29 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-col md:flex-row gap-2">
                                         <input type={showCreatePwd?'text':'password'} className={`flex-1 border rounded p-2 ${userErrors.password?'border-red-500':''}`} placeholder="Password (min 6 chars)" value={userForm.password} onChange={e=>{setUserForm({...userForm,password:e.target.value}); if (e.target.value) setUserErrors(prev=>({...prev,password:undefined}));}} />
-                                        <button type="button" className="px-2 border rounded" onClick={()=>setShowCreatePwd(v=>!v)}>{showCreatePwd?'Hide':'Show'}</button>
-                                        <button type="button" className="px-2 border rounded" onClick={()=>{
-                                            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
-                                            const array = new Uint32Array(16);
-                                            window.crypto.getRandomValues(array);
-                                            let out = '';
-                                            for (let i = 0; i < array.length; i++) out += chars[array[i] % chars.length];
-                                            setUserForm({...userForm,password: out, confirm: out});
-                                            setShowCreatePwd(true);
-                                            setShowCreateConfirm(true);
-                                        }}>Generate</button>
+                                        <div className="flex gap-2 shrink-0">
+                                            <button type="button" className="flex-1 md:flex-none px-3 border rounded hover:bg-gray-50" onClick={()=>setShowCreatePwd(v=>!v)}>{showCreatePwd?'Hide':'Show'}</button>
+                                            <button type="button" className="flex-1 md:flex-none px-3 border rounded hover:bg-gray-50" onClick={()=>{
+                                                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+                                                const array = new Uint32Array(16);
+                                                window.crypto.getRandomValues(array);
+                                                let out = '';
+                                                for (let i = 0; i < array.length; i++) out += chars[array[i] % chars.length];
+                                                setUserForm({...userForm,password: out, confirm: out});
+                                                setShowCreatePwd(true);
+                                                setShowCreateConfirm(true);
+                                            }}>Generate</button>
+                                        </div>
                                     </div>
                                     {userErrors.password && (<div className="text-red-600 text-sm">{userErrors.password}</div>)}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-col md:flex-row gap-2">
                                         <input type={showCreateConfirm?'text':'password'} className={`flex-1 border rounded p-2 ${userErrors.confirm?'border-red-500':''}`} placeholder="Confirm Password" value={userForm.confirm} onChange={e=>{setUserForm({...userForm,confirm:e.target.value}); if (e.target.value) setUserErrors(prev=>({...prev,confirm:undefined}));}} />
-                                        <button type="button" className="px-2 border rounded" onClick={()=>setShowCreateConfirm(v=>!v)}>{showCreateConfirm?'Hide':'Show'}</button>
+                                        <button type="button" className="px-3 border rounded hover:bg-gray-50 shrink-0 md:flex-none" onClick={()=>setShowCreateConfirm(v=>!v)}>{showCreateConfirm?'Hide':'Show'}</button>
                                     </div>
                                     {userErrors.confirm && (<div className="text-red-600 text-sm">{userErrors.confirm}</div>)}
                                 </div>
