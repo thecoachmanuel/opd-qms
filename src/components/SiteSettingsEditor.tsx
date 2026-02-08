@@ -6,7 +6,7 @@ import { uploadSiteLogo, removeSiteLogo } from '../services/api';
 export const SiteSettingsEditor: React.FC = () => {
   const { config, updateConfig } = useSiteSettings();
   const [formData, setFormData] = useState(config);
-  const [activeSection, setActiveSection] = useState<'hero' | 'header' | 'footer' | 'meta'>(() => {
+  const [activeSection, setActiveSection] = useState<'hero' | 'header' | 'footer' | 'meta' | 'location'>(() => {
     return (localStorage.getItem('site_settings_active_section') as any) || 'hero';
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
