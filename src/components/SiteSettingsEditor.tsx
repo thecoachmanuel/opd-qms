@@ -43,6 +43,18 @@ export const SiteSettingsEditor: React.FC = () => {
     }));
   };
 
+  const handleNumberChange = (section: string, key: string, value: string) => {
+    const num = parseFloat(value);
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        // @ts-ignore
+        ...prev[section as keyof typeof prev],
+        [key]: isNaN(num) ? 0 : num
+      }
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);

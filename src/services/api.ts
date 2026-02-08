@@ -236,13 +236,39 @@ export const checkIn = async (data: any) => {
       await supabase.from('appointments').update({ status: 'checked_in' }).eq('id', data.appointment_id);
   }
 
-  // 2. Add to Queue
+  // 2. Prepare Ticket Number
+  let ticketNumber = data.ticket_number;
+
+  if (!ticketNumber) {
+    // Generate consecutive walk-in number
+    // We count how many 'W-%' tickets exist for this clinic today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const { count, error: countErr } = await supabase
+        .from('queue')
+        .select('*', { count: 'exact', head: true })
+        .eq('clinic_id', data.clinic_id)
+        .ilike('ticket_number', 'W-%')
+        .gte('created_at', startOfDay.toISOString());
+    
+    if (countErr) {
+        console.error('Failed to count walk-ins', countErr);
+        // Fallback to random if count fails
+        ticketNumber = `W-${Math.floor(Math.random() * 1000)}`;
+    } else {
+        const nextNum = (count || 0) + 1;
+        ticketNumber = `W-${nextNum.toString().padStart(3, '0')}`;
+    }
+  }
+
+  // 3. Add to Queue
   const { data: entry, error } = await supabase
     .from('queue')
     .insert({
         clinic_id: data.clinic_id,
         appointment_id: data.appointment_id,
-        ticket_number: data.ticket_number || `W-${Math.floor(Math.random() * 1000)}`, // Walk-in generation
+        ticket_number: ticketNumber,
         patient_name: data.patient_name,
         status: 'waiting',
         arrival_time: new Date().toISOString()

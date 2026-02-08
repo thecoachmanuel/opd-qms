@@ -431,21 +431,21 @@ export const AdminDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
                         <p className="text-gray-500">Overview of all appointments, consultations, and analytics</p>
                     </div>
-                    <div className="flex space-x-2">
-                        <button onClick={() => setTab('analytics')} className={`px-4 py-2 rounded-md ${tab==='analytics'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Analytics</button>
-                        <button onClick={() => setTab('clinics')} className={`px-4 py-2 rounded-md ${tab==='clinics'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Clinics</button>
-                        <button onClick={() => setTab('users')} className={`px-4 py-2 rounded-md ${tab==='users'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Users</button>
-                        <button onClick={() => setTab('logs')} className={`px-4 py-2 rounded-md ${tab==='logs'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Audit Logs</button>
-                        <button onClick={() => setTab('site_config')} className={`px-4 py-2 rounded-md flex items-center ${tab==='site_config'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>
+                    <div className="flex flex-wrap gap-2 w-full xl:w-auto">
+                        <button onClick={() => setTab('analytics')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='analytics'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Analytics</button>
+                        <button onClick={() => setTab('clinics')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='clinics'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Clinics</button>
+                        <button onClick={() => setTab('users')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='users'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Users</button>
+                        <button onClick={() => setTab('logs')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md whitespace-nowrap ${tab==='logs'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>Audit Logs</button>
+                        <button onClick={() => setTab('site_config')} className={`flex-1 xl:flex-none px-4 py-2 rounded-md flex items-center justify-center whitespace-nowrap ${tab==='site_config'?'bg-green-600 text-white':'bg-white border border-gray-300 text-gray-700'}`}>
                             <Globe className="h-4 w-4 mr-2" />
                             Site Settings
                         </button>
-                        <button onClick={() => {loadData(); loadAdminData();}} className="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Refresh</button>
+                        <button onClick={() => {loadData(); loadAdminData();}} className="flex-1 xl:flex-none px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 whitespace-nowrap">Refresh</button>
                     </div>
                 </div>
 
@@ -598,36 +598,6 @@ export const AdminDashboard: React.FC = () => {
                                 </RePieChart>
                             </ResponsiveContainer>
                         </div>
-                    </div>
-                </div>
-
-                {/* Doctor Productivity */}
-                <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Doctor Productivity (Patients Served)</h3>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Daily</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weekly</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {doctorStats.map(d => (
-                                    <tr key={d.doctor_id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{d.doctor_name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{d.daily}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{d.weekly}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{d.monthly}</td>
-                                    </tr>
-                                ))}
-                                {doctorStats.length === 0 && (
-                                    <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No data</td></tr>
-                                )}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 
@@ -820,12 +790,12 @@ export const AdminDashboard: React.FC = () => {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="flex items-center justify-between">
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                 <div>
                                                     <div className="font-semibold">{c.name}</div>
                                                     <div className="text-sm text-gray-500">{c.location} • {c.active_hours}</div>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-wrap gap-2">
                                                     <a className="px-3 py-1 border rounded bg-green-50 text-green-700" href={`/display/${c.id}`} target="_blank" rel="noopener noreferrer">Screen Display</a>
                                                     <button className="px-3 py-1 border rounded" onClick={()=>{navigator.clipboard.writeText(`${window.location.origin}/display/${c.id}`); alert('Display link copied');}}>Copy Link</button>
                                                     <button className="px-3 py-1 border rounded" onClick={()=>{setEditingClinicId(c.id); setClinicEdit({ name: c.name || '', location: c.location || '', active_hours: c.active_hours || '' });}}>Edit</button>
@@ -1067,7 +1037,7 @@ export const AdminDashboard: React.FC = () => {
                                                 </div>
                                             </div>
                                         ) : (
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                     <div className="flex items-center gap-3">
                                                         <Avatar srcPath={(u as any).profile_image} username={(u as any).full_name || u.username} size={40} />
                                                         <div>
@@ -1084,7 +1054,7 @@ export const AdminDashboard: React.FC = () => {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex flex-wrap gap-2">
                                                         {!u.approved && (
                                                           <button className="px-3 py-1 bg-yellow-500 text-white rounded" onClick={async()=>{await adminApproveUser(u.id); loadAdminData();}}>Approve</button>
                                                         )}

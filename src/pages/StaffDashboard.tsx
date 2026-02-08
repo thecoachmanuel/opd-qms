@@ -190,14 +190,14 @@ export const StaffDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800">Staff Dashboard</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <p className="text-gray-600">Clinic: <span className="font-semibold text-green-600">{clinics.find(c => c.id === selectedClinic)?.name}</span></p>
                         </div>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4">
                          <button 
                             onClick={() => loadQueue()}
                             className="p-2 text-gray-600 hover:text-primary rounded-full hover:bg-gray-100"
@@ -291,7 +291,7 @@ export const StaffDashboard: React.FC = () => {
                             </div>
                             <ul className="divide-y divide-gray-200">
                                 {waitingQueue.map((item) => (
-                                    <li key={item.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                                    <li key={item.id} className="px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-gray-50 gap-4">
                                         <div>
                                             <span className={`text-xl font-bold block ${ticketStyle(selectedClinic)}`}>{item.ticket_number}</span>
                                             <span className="text-sm text-gray-500">{item.patient_name || 'Anonymous'}</span>
