@@ -209,68 +209,68 @@ export const QueueDisplay: React.FC = () => {
     const waiting = queue.filter(q => q.status === 'waiting').slice(0, 5); // Show next 5
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 flex flex-col">
+        <div className="h-screen bg-gray-900 text-white p-2 md:p-6 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-center border-b border-gray-700 pb-6 mb-8 gap-4 md:gap-0">
+            <div className="flex-none flex flex-col md:flex-row justify-between items-center border-b border-gray-700 pb-4 mb-4 gap-2 md:gap-0">
                 <div className="flex items-center gap-3">
                     {config.header.logo_url ? (
-                        <img src={config.header.logo_url} alt={config.header.site_name} className="h-10 w-auto object-contain" />
+                        <img src={config.header.logo_url} alt={config.header.site_name} className="h-8 md:h-10 w-auto object-contain" />
                     ) : (
-                        <Activity className="h-8 w-8 text-green-500" />
+                        <Activity className="h-6 w-6 md:h-8 md:w-8 text-green-500" />
                     )}
-                    <span className="text-xl font-bold text-white">{config.header.site_name}</span>
+                    <span className="text-lg md:text-xl font-bold text-white">{config.header.site_name}</span>
                 </div>
                 <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                    <h1 className="text-2xl md:text-4xl font-bold text-green-400">{clinicName}</h1>
-                    <div className="flex items-center gap-2 mt-2">
-                        <span className="text-gray-400 text-sm md:text-base">{clinicLocation}</span>
-                        <span className={`h-3 w-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? "Live Connected" : "Disconnected"}></span>
-                        {lastUpdated && <span className="text-xs text-gray-500">Updated: {lastUpdated}</span>}
+                    <h1 className="text-xl md:text-4xl font-bold text-green-400">{clinicName}</h1>
+                    <div className="flex items-center gap-2 mt-1 md:mt-2">
+                        <span className="text-gray-400 text-xs md:text-base">{clinicLocation}</span>
+                        <span className={`h-2 w-2 md:h-3 md:w-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? "Live Connected" : "Disconnected"}></span>
+                        {lastUpdated && <span className="text-[10px] md:text-xs text-gray-500">Updated: {lastUpdated}</span>}
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
                     <button 
                         onClick={audioEnabled ? () => setAudioEnabled(false) : initAudio}
-                        className={`p-3 rounded-full transition-colors ${audioEnabled ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-400'}`}
+                        className={`p-2 md:p-3 rounded-full transition-colors ${audioEnabled ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-400'}`}
                         title={audioEnabled ? "Mute Audio" : "Enable Audio"}
                     >
-                        {audioEnabled ? <Volume2 className="h-6 w-6" /> : <VolumeX className="h-6 w-6" />}
+                        {audioEnabled ? <Volume2 className="h-4 w-4 md:h-6 md:w-6" /> : <VolumeX className="h-4 w-4 md:h-6 md:w-6" />}
                     </button>
 
-                    <div className="text-xl md:text-2xl text-gray-400 font-mono">
+                    <div className="text-lg md:text-2xl text-gray-400 font-mono">
                         {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </div>
                     
                     <button
                         onClick={toggleFullscreen}
-                        className="p-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                        className="p-2 md:p-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
                         title={isFullscreen ? 'Exit Fullscreen' : 'Go Fullscreen'}
                     >
-                        {isFullscreen ? <Minimize className="h-6 w-6" /> : <Maximize className="h-6 w-6" />}
+                        {isFullscreen ? <Minimize className="h-4 w-4 md:h-6 md:w-6" /> : <Maximize className="h-4 w-4 md:h-6 md:w-6" />}
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
                 {/* NOW SERVING - MAIN FOCUS */}
-                <div className={`bg-gray-800 rounded-3xl p-12 flex flex-col items-center justify-center ${ticketStyle(clinicId).borderGlow}`}>
-                    <h2 className="text-4xl font-light text-gray-400 uppercase tracking-widest mb-8">Now Serving</h2>
+                <div className={`bg-gray-800 rounded-2xl md:rounded-3xl p-4 md:p-12 flex flex-col items-center justify-center ${ticketStyle(clinicId).borderGlow} h-full overflow-hidden`}>
+                    <h2 className="text-2xl md:text-4xl font-light text-gray-400 uppercase tracking-widest mb-4 md:mb-8 text-center">Now Serving</h2>
                     
                     {serving ? (
-                        <div className="text-center animate-pulse">
-                            <div className={`text-[12rem] font-black leading-none tracking-tighter ${ticketStyle(clinicId).text}`}>
+                        <div className="text-center animate-pulse flex flex-col items-center justify-center flex-1">
+                            <div className={`text-7xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-black leading-none tracking-tighter ${ticketStyle(clinicId).text}`}>
                                 {serving.ticket_number}
                             </div>
-                            <div className="text-4xl text-green-400 mt-4 font-medium">
+                            <div className="text-xl md:text-4xl text-green-400 mt-4 font-medium break-words max-w-full px-4">
                                 {serving.patient_name || 'Please Proceed to Room'}
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center">
-                            <div className="text-6xl font-bold text-gray-600">
+                        <div className="text-center flex flex-col items-center justify-center flex-1">
+                            <div className="text-4xl md:text-6xl font-bold text-gray-600">
                                 -- --
                             </div>
-                            <div className="text-2xl text-gray-500 mt-4">
+                            <div className="text-xl md:text-2xl text-gray-500 mt-4">
                                 Please Wait
                             </div>
                         </div>
@@ -278,34 +278,29 @@ export const QueueDisplay: React.FC = () => {
                 </div>
 
                 {/* UP NEXT LIST */}
-                <div className="bg-gray-800 rounded-3xl p-8 border border-gray-700">
-                    <h2 className="text-3xl font-light text-gray-400 uppercase tracking-widest mb-8 pl-4 border-l-4 border-blue-500">Up Next</h2>
+                <div className="bg-gray-800 rounded-2xl md:rounded-3xl p-4 md:p-8 border border-gray-700 flex flex-col h-full overflow-hidden">
+                    <h2 className="text-xl md:text-3xl font-light text-gray-400 uppercase tracking-widest mb-4 md:mb-8 pl-4 border-l-4 border-blue-500 flex-none">Up Next</h2>
                     
-                    <div className="space-y-4">
+                    <div className="flex-1 overflow-y-auto space-y-2 md:space-y-4 pr-2">
                         {waiting.length > 0 ? (
                             waiting.map((item, index) => (
-                                <div key={item.id} className="flex justify-between items-center bg-gray-700 p-6 rounded-xl">
+                                <div key={item.id} className="flex justify-between items-center bg-gray-700 p-3 md:p-6 rounded-xl">
                                     <div className="flex items-center">
-                                        <span className="text-gray-500 font-mono text-xl w-12">#{index + 1}</span>
-                                        <span className={`text-4xl font-bold ${ticketStyle(clinicId).text}`}>{item.ticket_number}</span>
+                                        <span className="text-gray-500 font-mono text-base md:text-xl w-8 md:w-12">#{index + 1}</span>
+                                        <span className={`text-2xl md:text-4xl font-bold ${ticketStyle(clinicId).text}`}>{item.ticket_number}</span>
                                     </div>
-                                    <span className="text-xl text-gray-300">
+                                    <span className="text-sm md:text-xl text-gray-300">
                                         Wait: ~{index * 15} min
                                     </span>
                                 </div>
                             ))
                         ) : (
-                            <div className="text-center py-12 text-gray-500 text-xl">
+                            <div className="text-center py-12 text-gray-500 text-lg md:text-xl">
                                 No patients waiting
                             </div>
                         )}
                     </div>
                 </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 text-center text-gray-500 text-lg">
-                Please have your ticket number ready.
             </div>
         </div>
     );
