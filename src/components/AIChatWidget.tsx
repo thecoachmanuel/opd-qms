@@ -176,9 +176,13 @@ export const AIChatWidget: React.FC = () => {
       setIsTyping(false);
       
       if (results && results.length > 0) {
-        // Sort by scheduled_time descending to get latest
-        const sorted = results.sort((a: any, b: any) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
-        const appt = sorted[0];
+        // Prioritize active queue status
+        const activeStatuses = ['serving', 'waiting', 'checked_in', 'pending'];
+        // Sort by time first to get latest relevant ones
+        const sortedByTime = results.sort((a: any, b: any) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
+        
+        // Find first active one, or fallback to latest scheduled
+        const appt = sortedByTime.find((r: any) => activeStatuses.includes(r.status)) || sortedByTime[0];
         
         addMessage(`Appointment found for ${appt.patient_name || 'Patient'}.`, 'bot');
         addMessage(`Ticket Number: ${appt.ticket_code}`, 'bot');
@@ -188,8 +192,43 @@ export const AIChatWidget: React.FC = () => {
         if (appt.status === 'booked') {
             const date = new Date(appt.scheduled_time);
             addMessage(`Scheduled for: ${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 'bot');
-        } else if (appt.status === 'waiting' || appt.status === 'pending') {
-            addMessage('You are currently in the queue. Please check the display screens.', 'bot');
+            addMessage('You have not checked in yet. Please check in when you arrive at the clinic.', 'bot');
+        } else if (activeStatuses.includes(appt.status)) {
+            if (appt.clinic_id) {
+                addMessage('Checking detailed queue position...', 'bot');
+                try {
+                    const queueData = await getQueueStatus(appt.clinic_id);
+                    const myTicket = appt.ticket_code;
+                    
+                    // Check if currently serving
+                    if (queueData.currentServing && queueData.currentServing.ticket_number === myTicket) {
+                        addMessage('🎉 It is your turn! Please proceed to the doctor immediately.', 'bot');
+                        return;
+                    }
+
+                    // Calculate position in waiting list
+                    const waitingQueue = queueData.queue.filter((q: any) => q.status === 'waiting');
+                    const myPosition = waitingQueue.findIndex((q: any) => q.ticket_number === myTicket);
+                    
+                    if (myPosition !== -1) {
+                         const peopleAhead = myPosition;
+                         const estWait = (peopleAhead + 1) * 15; // Approx 15 mins per person
+                         addMessage(`You are number ${myPosition + 1} in the waiting list.`, 'bot');
+                         if (peopleAhead > 0) {
+                             addMessage(`There are ${peopleAhead} people ahead of you.`, 'bot');
+                             addMessage(`Estimated wait time: ~${estWait} minutes.`, 'bot');
+                         } else {
+                             addMessage('You are next in line!', 'bot');
+                         }
+                    } else {
+                         addMessage('You are checked in. Please wait for your number to be called.', 'bot');
+                    }
+                } catch (err) {
+                    addMessage('You are currently in the queue. Please check the display screens.', 'bot');
+                }
+            } else {
+                addMessage('You are currently in the queue. Please check the display screens.', 'bot');
+            }
         }
       } else {
         addMessage(`No appointments found for "${query}". Please check the details and try again.`, 'bot');
@@ -428,7 +467,7 @@ export const AIChatWidget: React.FC = () => {
     if (lowerText.includes('help') || lowerText.includes('what can you do') || lowerText.includes('capabilities')) {
       addMessage("I'm here to help make your hospital visit smoother and healthier. I can:", 'bot');
       setTimeout(() => {
-         addMessage("• Answer medical & health questions\n• Book new appointments\n• Check your position in the queue\n• Help you log in to your dashboard", 'bot', 'options', [
+         addMessage("• Book new appointments\n• Check your position in the queue\n• Help you log in to your dashboard", 'bot', 'options', [
             { label: 'Start Booking', value: 'book' },
             { label: 'Health Facts', value: 'tell me a health fact' },
             { label: 'Check Queue', value: 'track' }
