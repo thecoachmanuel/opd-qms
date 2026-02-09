@@ -244,24 +244,24 @@ export const DoctorDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                     <div>
+                    <div className="flex justify-between items-center mb-8 flex-col sm:flex-row gap-4 sm:gap-0">
+                     <div className="text-center sm:text-left">
                         <h1 className="text-3xl font-bold text-gray-800">Doctor Dashboard</h1>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
                             <p className="text-gray-600">Clinic: <span className="font-semibold text-blue-600">{clinics.find(c => c.id === selectedClinic)?.name}</span></p>
                         </div>
                     </div>
-                    <div className="flex bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex bg-white p-1 rounded-lg border border-gray-200 shadow-sm w-full sm:w-auto">
                         <button 
                             onClick={() => setViewMode('queue')}
-                            className={`px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-all ${viewMode === 'queue' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
+                            className={`flex-1 sm:flex-none justify-center px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-all ${viewMode === 'queue' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <Stethoscope className="w-4 h-4" />
                             Active Queue
                         </button>
                         <button 
                             onClick={() => setViewMode('history')}
-                            className={`px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-all ${viewMode === 'history' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
+                            className={`flex-1 sm:flex-none justify-center px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-all ${viewMode === 'history' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <ClipboardList className="w-4 h-4" />
                             My Consultations

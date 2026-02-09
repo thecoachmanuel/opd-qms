@@ -140,6 +140,22 @@ export const AIChatWidget: React.FC = () => {
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [hasPromptedInactivity, setHasPromptedInactivity] = useState(false);
 
+  const addMessage = (text: string, sender: 'user' | 'bot', type: Message['type'] = 'text', options?: Message['options'], data?: any) => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text,
+      sender,
+      type,
+      options,
+      data
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   // Hide on TV Display or specific pages if needed
   if (location.pathname.startsWith('/display')) return null;
 

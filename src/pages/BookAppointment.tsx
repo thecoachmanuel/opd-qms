@@ -171,7 +171,7 @@ export const BookAppointment: React.FC = () => {
         </div>
 
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-6">
             
             {step === 1 && (
               <div className="space-y-6">
