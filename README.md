@@ -4,10 +4,11 @@ A modern, high-fidelity queue management and appointment booking solution design
 
 ## 🚀 Key Features
 
-### 🤖 Intelligent AI Assistant
-- **Live Chat Widget:** Context-aware AI assistant on the homepage.
-- **Automated Assistance:** Helps users with **Login**, **Sign Up**, **Booking Appointments**, and **Tracking Queue Status**.
-- **Smart Navigation:** Directs logged-in users to their specific dashboards (Admin, Doctor, Staff).
+### 🤖 Intelligent AI Assistant ("Lara")
+- **Medical Knowledge Engine:** Provides doctor-level medical advice, health facts, and public health information to keep patients engaged while waiting.
+- **Admin Command Center:** Empowers Admins to **Create**, **Edit**, and **Delete** users directly through conversational commands.
+- **Enhanced Queue Tracking:** Real-time status updates for both **Walk-in** and **Appointment** patients, including queue position and estimated wait times.
+- **Smart Context:** Distinguishes between user roles (Admin, Doctor, Staff, Patient) to offer tailored menu options and welcome messages.
 - **Hospital Knowledge Base:** Answers FAQs about location, visiting hours, and services.
 
 ### 🏥 Clinic & Patient Management
