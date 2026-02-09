@@ -43,7 +43,7 @@ export const AIChatWidget: React.FC = () => {
       { label: '🔢 Track Queue Status', value: 'track' },
       { label: '🔑 Login Help', value: 'login' },
       { label: '📝 Sign Up Help', value: 'signup' },
-      { label: '❓ Hospital Info', value: 'help' }
+      { label: '❓ What I can help with!', value: 'help' }
     ]}
   ]);
   const [inputText, setInputText] = useState('');
