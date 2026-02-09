@@ -137,9 +137,57 @@ export const AIChatWidget: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [clinics, setClinics] = useState<any[]>([]);
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [hasPromptedInactivity, setHasPromptedInactivity] = useState(false);
 
   // Hide on TV Display or specific pages if needed
   if (location.pathname.startsWith('/display')) return null;
+
+  const getRoleBasedOptions = (currentUser: any) => {
+    let welcomeText = 'Hello! I am Lara, your Health Assistant. How can I help you today?';
+    let welcomeOptions: Message['options'] = [
+      { label: '📅 Book Appointment', value: 'book' },
+      { label: '🔢 Track Queue Status', value: 'track' },
+      { label: '🩺 Health Advice', value: 'tell me about healthy lifestyle' },
+      { label: '🔑 Login Help', value: 'login' },
+      { label: '📝 Sign Up Help', value: 'signup' },
+      { label: '❓ What I can help with!', value: 'help' }
+    ];
+
+    if (currentUser) {
+      if (currentUser.role === 'admin') {
+        welcomeText = `Hello Admin ${currentUser.full_name || currentUser.username}! I am Lara. I can help you manage clinics and users.`;
+        welcomeOptions = [
+          { label: '🏥 Create New Clinic', value: 'admin_create_clinic' },
+          { label: '👥 Manage Users', value: 'admin_manage_users_menu' },
+          { label: '👥 Approve Users', value: 'admin_approve_users' },
+          { label: '📊 Dashboard', value: 'admin_manage_users' },
+          { label: '❓ What I can help with!', value: 'help' }
+        ];
+      } else if (currentUser.role === 'staff') {
+        welcomeText = `Hello ${currentUser.full_name || currentUser.username}! I am Lara. Ready to assist with queue management.`;
+        welcomeOptions = [
+          { label: '🔢 Check Queue Status', value: 'staff_check_queue' },
+          { label: '📅 Book Appointment', value: 'book' },
+          { label: '❓ What I can help with!', value: 'help' }
+        ];
+      } else if (currentUser.role === 'doctor') {
+        welcomeText = `Hello Dr. ${currentUser.full_name || currentUser.username}! I am Lara. Ready to assist you.`;
+        welcomeOptions = [
+          { label: '👨‍⚕️ Check My Queue', value: 'staff_check_queue' },
+          { label: '❓ What I can help with!', value: 'help' }
+        ];
+      } else {
+        welcomeText = `Hello ${currentUser.full_name || currentUser.username}! I am Lara, your Health Assistant.`;
+      }
+    }
+    return { welcomeText, welcomeOptions };
+  };
+
+  const showFollowUpOptions = () => {
+    const { welcomeOptions } = getRoleBasedOptions(user);
+    addMessage('Is there anything else I can help you with?', 'bot', 'options', welcomeOptions);
+  };
 
   useEffect(() => {
     // Auto-hide hint after 5 seconds
@@ -149,35 +197,41 @@ export const AIChatWidget: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Inactivity Timer
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setShowHint(false);
-      } else {
-        setShowHint(true);
+    if (!isOpen) return;
+
+    const checkInactivity = setInterval(() => {
+      const inactiveDuration = Date.now() - lastActivity;
+      if (inactiveDuration > 45000 && !hasPromptedInactivity) { // 45 seconds
+        setHasPromptedInactivity(true);
+        const { welcomeOptions } = getRoleBasedOptions(user);
+        addMessage('Are you still there? I can help with any of these:', 'bot', 'options', welcomeOptions);
       }
-    };
+    }, 5000);
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+    return () => clearInterval(checkInactivity);
+  }, [isOpen, lastActivity, hasPromptedInactivity, user]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isOpen]);
+    if (authLoading) return;
 
-  useEffect(() => {
-    // Load clinics for booking
-    getClinics().then(setClinics).catch(() => {});
-  }, []);
+    const { welcomeText, welcomeOptions } = getRoleBasedOptions(user);
 
-  const addMessage = (text: string, sender: 'user' | 'bot', type: Message['type'] = 'text', options?: Message['options'], data?: any) => {
-    setMessages(prev => [...prev, { id: Date.now().toString(), sender, text, type, options, data }]);
-  };
+    setMessages(prev => {
+      // Only update if it's the initial message
+      if (prev.length === 1 && prev[0].id === '1') {
+        return [{
+          id: '1',
+          sender: 'bot',
+          text: welcomeText,
+          type: 'options',
+          options: welcomeOptions
+        }];
+      }
+      return prev;
+    });
+  }, [user, authLoading]);
 
   const checkQueueStatus = async (query: string) => {
     setIsTyping(true);
@@ -302,6 +356,7 @@ export const AIChatWidget: React.FC = () => {
         });
         addMessage(`✅ Clinic ${data.name} created successfully!`, 'bot');
         setAdminState({ step: 'none', data: {} });
+        showFollowUpOptions();
       } catch (e) {
         addMessage('Error creating clinic. Please try again.', 'bot');
         setAdminState({ step: 'none', data: {} });
@@ -473,6 +528,7 @@ export const AIChatWidget: React.FC = () => {
             await adminUpdateUser(targetUserId!, updates);
             addMessage('✅ User updated successfully!', 'bot');
             setAdminState({ step: 'none', data: {} });
+            showFollowUpOptions();
         } catch (e) {
              addMessage('Error updating user.', 'bot');
              setAdminState({ step: 'none', data: {} });
@@ -1040,10 +1096,7 @@ export const AIChatWidget: React.FC = () => {
                addMessage(`Time: ${slotTime}`, 'bot');
                addMessage(`Ticket Number: ${ticketCode}`, 'bot');
                
-               addMessage('Is there anything else I can help you with?', 'bot', 'options', [
-                  { label: 'Track Queue', value: 'track' },
-                  { label: 'Login', value: 'login' }
-               ]);
+               showFollowUpOptions();
                
                setBookingState({ step: 'none', data: {} });
            } catch (e: any) {
@@ -1063,7 +1116,7 @@ export const AIChatWidget: React.FC = () => {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Chat Window */}
       {isOpen && (
-        <div className="bg-white w-80 sm:w-96 h-[500px] rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden mb-4 animate-fade-in-up">
+        <div className="bg-white w-80 sm:w-[450px] h-[600px] rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden mb-4 animate-fade-in-up">
           {/* Header */}
           <div className="bg-green-700 text-white p-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
