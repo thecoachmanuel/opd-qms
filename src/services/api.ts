@@ -373,7 +373,8 @@ export const getSiteConfig = async (): Promise<SiteConfig> => {
       },
       header: {
         site_name: 'OPD-QMS',
-        logo_url: ''
+        logo_url: '',
+        favicon_url: ''
       },
       footer: {
         brand_description: 'Streamlining healthcare delivery with efficient queue management. Reducing wait times and improving patient experience at LASUTH.',
@@ -1139,6 +1140,38 @@ export const removeSiteLogo = async (currentUrl?: string | null) => {
             }
         } catch (err) {
             console.warn('Failed to cleanup old site logo:', err);
+        }
+    }
+    return true;
+};
+
+export const uploadSiteFavicon = async (file: File): Promise<{ favicon_url: string }> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `site-favicon-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from('assets').getPublicUrl(filePath);
+    return { favicon_url: data.publicUrl };
+};
+
+export const removeSiteFavicon = async (currentUrl?: string | null) => {
+    if (currentUrl) {
+        try {
+            // Extract file path from URL
+            // Format: .../storage/v1/object/public/assets/FILENAME
+            const parts = currentUrl.split('/assets/');
+            if (parts.length === 2) {
+                const filePath = parts[1];
+                await supabase.storage.from('assets').remove([filePath]);
+            }
+        } catch (err) {
+            console.warn('Failed to cleanup old site favicon:', err);
         }
     }
     return true;

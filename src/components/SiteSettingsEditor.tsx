@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSiteSettings } from '../context/SiteSettingsContext';
 import { Save, AlertCircle, Check, Upload, Trash2 } from 'lucide-react';
-import { uploadSiteLogo, removeSiteLogo } from '../services/api';
+import { uploadSiteLogo, removeSiteLogo, uploadSiteFavicon, removeSiteFavicon } from '../services/api';
 
 export const SiteSettingsEditor: React.FC = () => {
   const { config, updateConfig } = useSiteSettings();
@@ -264,6 +264,93 @@ export const SiteSettingsEditor: React.FC = () => {
                 <div className="mt-2">
                   <p className="text-xs text-gray-500 mb-1">Preview:</p>
                   <img src={formData.header.logo_url} alt="Logo Preview" className="h-10 w-auto object-contain border p-1 rounded bg-gray-50" />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Favicon URL</label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  type="text"
+                  value={formData.header.favicon_url || ''}
+                  onChange={e => handleChange('header', 'favicon_url', e.target.value)}
+                  placeholder="https://example.com/favicon.ico"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                />
+                <label className="flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+                   <Upload className="h-4 w-4 mr-2" />
+                   Upload
+                   <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*,.ico"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      try {
+                        setMessage({ type: 'success', text: 'Uploading favicon...' });
+                        const resp = await uploadSiteFavicon(f);
+                        
+                        // Prepare updated config
+                        const updatedConfig = {
+                            ...formData,
+                            header: {
+                                ...formData.header,
+                                favicon_url: resp.favicon_url
+                            }
+                        };
+                        
+                        // Update local state
+                        setFormData(updatedConfig);
+                        
+                        // Save immediately
+                        await updateConfig(updatedConfig);
+                        
+                        setMessage({ type: 'success', text: 'Favicon uploaded and saved successfully' });
+                      } catch (err: any) {
+                        console.error(err);
+                        setMessage({ type: 'error', text: 'Failed to upload favicon: ' + (err.message || 'Unknown error') });
+                      }
+                    }}
+                   />
+                </label>
+                {formData.header.favicon_url && (
+                    <button 
+                        type="button"
+                        onClick={async () => {
+                            if (!confirm('Remove site favicon?')) return;
+                            try {
+                                await removeSiteFavicon(formData.header.favicon_url);
+                                
+                                const updatedConfig = {
+                                    ...formData,
+                                    header: {
+                                        ...formData.header,
+                                        favicon_url: ''
+                                    }
+                                };
+                                
+                                setFormData(updatedConfig);
+                                await updateConfig(updatedConfig);
+                                setMessage({ type: 'success', text: 'Favicon removed' });
+                            } catch (e: any) {
+                                console.error(e);
+                                setMessage({ type: 'error', text: 'Failed to remove favicon: ' + (e.message || 'Unknown error') });
+                            }
+                        }}
+                        className="flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+                    >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove
+                    </button>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Leave empty to use the default icon. Or upload a file (.ico, .png, .svg).</p>
+              {formData.header.favicon_url && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                  <img src={formData.header.favicon_url} alt="Favicon Preview" className="h-8 w-8 object-contain border p-1 rounded bg-gray-50" />
                 </div>
               )}
             </div>

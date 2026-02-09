@@ -13,7 +13,8 @@ const defaultSiteConfig: SiteConfig = {
   },
   header: {
     site_name: 'OPD-QMS',
-    logo_url: ''
+    logo_url: '',
+    favicon_url: ''
   },
   footer: {
     brand_description: 'Streamlining healthcare delivery with efficient queue management. Reducing wait times and improving patient experience at LASUTH.',
@@ -74,6 +75,13 @@ export const SiteSettingsProvider: React.FC<{ children: ReactNode }> = ({ childr
     const updated = await updateSiteConfig(updates);
     setConfig(updated);
     document.title = updated.meta.site_title;
+    
+    // Update favicon
+    const faviconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+    if (faviconLink) {
+        faviconLink.href = updated.header.favicon_url || '/vite.svg';
+    }
+    
     return updated;
   };
 
