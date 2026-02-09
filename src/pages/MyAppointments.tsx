@@ -100,7 +100,7 @@ export const MyAppointments: React.FC = () => {
                                                     <Calendar className="h-6 w-6 text-green-600" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-lg font-medium text-gray-900">{apt.clinic_name || 'Clinic Visit'}</h3>
+                                                    <h3 className="text-lg font-medium text-gray-900">{apt.clinic_name || apt.clinics?.name || 'Clinic Visit'}</h3>
                                                     <p className="text-sm text-gray-500">Ticket: <span className="font-bold text-gray-900">{apt.ticket_code}</span></p>
                                                 </div>
                                             </div>
@@ -119,7 +119,7 @@ export const MyAppointments: React.FC = () => {
                                             </div>
                                             <div className="flex items-center">
                                                 <User className="h-4 w-4 mr-2 text-gray-400" />
-                                                {apt.patient?.full_name}
+                                                {apt.patient_name || apt.patients?.full_name || 'Patient'}
                                             </div>
                                         </div>
 

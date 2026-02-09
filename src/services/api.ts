@@ -149,20 +149,12 @@ export const getAllAppointments = async () => {
 };
 
 export const searchAppointments = async (type: 'ticket' | 'phone', query: string) => {
-  let queryBuilder = supabase.from('appointments').select(`
-    *,
-    patients!inner (full_name, phone, file_no),
-    clinics (name)
-  `);
+  // Use RPC to bypass RLS for public search
+  const { data, error } = await supabase.rpc('search_appointments_public', {
+    p_type: type,
+    p_query: query
+  });
 
-  if (type === 'ticket') {
-    queryBuilder = queryBuilder.ilike('ticket_code', `%${query}%`);
-  } else {
-    // Search on joined patient table
-    queryBuilder = queryBuilder.ilike('patients.phone', `%${query}%`);
-  }
-
-  const { data, error } = await queryBuilder;
   if (error) throw error;
   return data;
 };

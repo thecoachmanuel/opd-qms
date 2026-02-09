@@ -22,6 +22,8 @@ interface BookingState {
     clinicName?: string;
     date?: Date;
     slot?: string;
+    availableSlots?: string[];
+    shownSlotsOffset?: number;
   };
 }
 
@@ -48,6 +50,7 @@ export const AIChatWidget: React.FC = () => {
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showHint, setShowHint] = useState(true);
   const [bookingState, setBookingState] = useState<BookingState>({ step: 'none', data: {} });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -57,6 +60,19 @@ export const AIChatWidget: React.FC = () => {
 
   // Hide on TV Display or specific pages if needed
   if (location.pathname.startsWith('/display')) return null;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100) {
+        setShowHint(false);
+      } else {
+        setShowHint(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -73,6 +89,39 @@ export const AIChatWidget: React.FC = () => {
 
   const addMessage = (text: string, sender: 'user' | 'bot', type: Message['type'] = 'text', options?: Message['options'], data?: any) => {
     setMessages(prev => [...prev, { id: Date.now().toString(), sender, text, type, options, data }]);
+  };
+
+  const checkQueueStatus = async (query: string) => {
+    setIsTyping(true);
+    try {
+      const hasLetters = /[a-zA-Z]/.test(query);
+      const type = hasLetters ? 'ticket' : 'phone';
+      const results = await searchAppointments(type, query);
+      setIsTyping(false);
+      
+      if (results && results.length > 0) {
+        // Sort by scheduled_time descending to get latest
+        const sorted = results.sort((a: any, b: any) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
+        const appt = sorted[0];
+        
+        addMessage(`Appointment found for ${appt.patient_name || 'Patient'}.`, 'bot');
+        addMessage(`Ticket Number: ${appt.ticket_code}`, 'bot');
+        addMessage(`Clinic: ${appt.clinic_name || 'General'}`, 'bot');
+        addMessage(`Status: ${appt.status.toUpperCase()}`, 'bot');
+        
+        if (appt.status === 'booked') {
+            const date = new Date(appt.scheduled_time);
+            addMessage(`Scheduled for: ${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 'bot');
+        } else if (appt.status === 'waiting') {
+            addMessage('You are currently in the queue. Please check the display screens.', 'bot');
+        }
+      } else {
+        addMessage(`No appointments found for "${query}". Please check the details and try again.`, 'bot');
+      }
+    } catch (e) {
+      setIsTyping(false);
+      addMessage('Error checking status. Please try again.', 'bot');
+    }
   };
 
   const handleSend = async () => {
@@ -373,9 +422,6 @@ export const AIChatWidget: React.FC = () => {
          
          if (slots.length === 0) {
              addMessage(`Sorry, no slots available for ${dateStr}. Please try another date or use the full booking page.`, 'bot');
-             // Optionally go back to date step? For now reset or let them try again by typing date? 
-             // Let's reset to keep it simple or maybe just stay on date step?
-             // Let's stay on date step effectively by asking again?
              addMessage('Please select another date:', 'bot', 'options', [
                 { label: 'Today', value: 'today' },
                 { label: 'Tomorrow', value: 'tomorrow' }
@@ -384,7 +430,17 @@ export const AIChatWidget: React.FC = () => {
              return;
          }
 
-         const slotOptions = slots.slice(0, 4).map((s: string) => ({ label: s, value: `slot_${s}` }));
+         // Store all slots and initial offset
+         const updatedData = { ...data, date: selectedDate, availableSlots: slots, shownSlotsOffset: 0 };
+         setBookingState({ step: 'slot', data: updatedData });
+
+         const limit = 4;
+         const slotOptions = slots.slice(0, limit).map((s: string) => ({ label: s, value: `slot_${s}` }));
+         
+         if (slots.length > limit) {
+             slotOptions.push({ label: 'Show more times', value: 'show_more_slots' });
+         }
+
          addMessage(`Here are some available slots for ${dateStr}:`, 'bot', 'options', slotOptions);
       } catch (e) {
          setIsTyping(false);
@@ -393,6 +449,47 @@ export const AIChatWidget: React.FC = () => {
       }
 
     } else if (step === 'slot') {
+       if (text === 'show_more_slots') {
+           const allSlots = data.availableSlots || [];
+           const currentOffset = data.shownSlotsOffset || 0;
+           const limit = 4;
+           const nextOffset = currentOffset + limit;
+           
+           if (nextOffset >= allSlots.length) {
+               addMessage('No more slots available for this day.', 'bot');
+               // Optionally loop back or show "Select another date"
+               return;
+           }
+
+           const nextSlots = allSlots.slice(nextOffset, nextOffset + limit);
+           const slotOptions = nextSlots.map((s: string) => ({ label: s, value: `slot_${s}` }));
+           
+           if (nextOffset + limit < allSlots.length) {
+               slotOptions.push({ label: 'Show more times', value: 'show_more_slots' });
+           } else {
+               // Maybe add option to go back to start?
+               slotOptions.push({ label: 'Start over', value: 'start_over_slots' });
+           }
+
+           setBookingState({ step: 'slot', data: { ...data, shownSlotsOffset: nextOffset } });
+           addMessage('Here are more available times:', 'bot', 'options', slotOptions);
+           return;
+       }
+
+       if (text === 'start_over_slots') {
+           const allSlots = data.availableSlots || [];
+           const limit = 4;
+           const slotOptions = allSlots.slice(0, limit).map((s: string) => ({ label: s, value: `slot_${s}` }));
+           
+           if (allSlots.length > limit) {
+               slotOptions.push({ label: 'Show more times', value: 'show_more_slots' });
+           }
+           
+           setBookingState({ step: 'slot', data: { ...data, shownSlotsOffset: 0 } });
+           addMessage('Here are the initial slots:', 'bot', 'options', slotOptions);
+           return;
+       }
+
        if (text.startsWith('slot_')) {
            const slotTime = text.replace('slot_', '');
            
@@ -571,6 +668,14 @@ export const AIChatWidget: React.FC = () => {
       )}
 
       {/* Floating Toggle Button */}
+      {!isOpen && showHint && (
+        <div className="mr-4 mb-2 bg-white px-4 py-2 rounded-lg shadow-lg border border-green-100 animate-bounce transition-opacity duration-300">
+           <p className="text-sm font-medium text-gray-700">Need help? Chat with AI Assistant 👋</p>
+           {/* Triangle pointer */}
+           <div className="absolute -bottom-1 right-8 w-3 h-3 bg-white transform rotate-45 border-b border-r border-green-100"></div>
+        </div>
+      )}
+
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`${isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'} text-white p-4 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center justify-center`}
