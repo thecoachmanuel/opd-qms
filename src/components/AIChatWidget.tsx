@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, X, Send, Bot, User, Loader, MapPin, Clock, CheckCircle } from 'lucide-react';
 import { getClinics, getSlots, bookAppointment, searchAppointments, adminCreateClinic, adminGetUsers, adminApproveUser, getQueueStatus } from '../services/api';
@@ -52,11 +52,11 @@ export const AIChatWidget: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', sender: 'bot', text: 'Hello! I am Lara, your Health Assistant. How can I help you today?', type: 'options', options: [
-      { label: '📅 Book Appointment', value: 'book' },
-      { label: '🔢 Track Queue Status', value: 'track' },
-      { label: '🔑 Login Help', value: 'login' },
-      { label: '📝 Sign Up Help', value: 'signup' },
-      { label: '❓ What I can help with!', value: 'help' }
+      { label: 'ðŸ“… Book Appointment', value: 'book' },
+      { label: 'ðŸ”¢ Track Queue Status', value: 'track' },
+      { label: 'ðŸ”‘ Login Help', value: 'login' },
+      { label: 'ðŸ“ Sign Up Help', value: 'signup' },
+      { label: 'â“ What I can help with!', value: 'help' }
     ]}
   ]);
 
@@ -66,35 +66,39 @@ export const AIChatWidget: React.FC = () => {
 
     let welcomeText = 'Hello! I am Lara, your Health Assistant. How can I help you today?';
     let welcomeOptions: Message['options'] = [
-      { label: '📅 Book Appointment', value: 'book' },
-      { label: '🔢 Track Queue Status', value: 'track' },
-      { label: '🩺 Health Advice', value: 'tell me about healthy lifestyle' },
-      { label: '🔑 Login Help', value: 'login' },
-      { label: '📝 Sign Up Help', value: 'signup' },
-      { label: '❓ What I can help with!', value: 'help' }
+      { label: 'ðŸ“… Book Appointment', value: 'book' },
+      { label: 'ðŸ”¢ Track Queue Status', value: 'track' },
+      { label: 'ðŸ©º Health Facts', value: 'tell me about healthy lifestyle' },
+      { label: 'ï¿½ Chat with Lara', value: 'enter_medical_chat' },
+      { label: 'ï¿½ Login Help', value: 'login' },
+      { label: 'ðŸ“ Sign Up Help', value: 'signup' },
+      { label: 'â“ What I can help with!', value: 'help' }
     ];
 
     if (user) {
       if (user.role === 'admin') {
         welcomeText = `Hello Admin ${user.full_name || user.username}! I am Lara. I can help you manage clinics and users.`;
         welcomeOptions = [
-          { label: '🏥 Create New Clinic', value: 'admin_create_clinic' },
-          { label: '👥 Approve Users', value: 'admin_approve_users' },
-          { label: '📊 Dashboard', value: 'admin_manage_users' },
-          { label: '❓ What I can help with!', value: 'help' }
+          { label: 'ðŸ¥ Create New Clinic', value: 'admin_create_clinic' },
+          { label: 'ðŸ‘¥ Approve Users', value: 'admin_approve_users' },
+          { label: 'ðŸ“Š Dashboard', value: 'admin_manage_users' },
+          { label: 'ðŸ’¬ Chat with Lara', value: 'enter_medical_chat' },
+          { label: 'â“ What I can help with!', value: 'help' }
         ];
       } else if (user.role === 'staff') {
         welcomeText = `Hello ${user.full_name || user.username}! I am Lara. Ready to assist with queue management.`;
         welcomeOptions = [
-          { label: '🔢 Check Queue Status', value: 'staff_check_queue' },
-          { label: '📅 Book Appointment', value: 'book' },
-          { label: '❓ What I can help with!', value: 'help' }
+          { label: 'ðŸ”¢ Check Queue Status', value: 'staff_check_queue' },
+          { label: 'ðŸ“… Book Appointment', value: 'book' },
+          { label: 'ðŸ’¬ Chat with Lara', value: 'enter_medical_chat' },
+          { label: 'â“ What I can help with!', value: 'help' }
         ];
       } else if (user.role === 'doctor') {
         welcomeText = `Hello Dr. ${user.full_name || user.username}! I am Lara. Ready to assist you.`;
         welcomeOptions = [
-          { label: '👨‍⚕️ Check My Queue', value: 'staff_check_queue' },
-          { label: '❓ What I can help with!', value: 'help' }
+          { label: 'ðŸ‘¨â€âš•ï¸ Check My Queue', value: 'staff_check_queue' },
+          { label: 'ðŸ’¬ Chat with Lara', value: 'enter_medical_chat' },
+          { label: 'â“ What I can help with!', value: 'help' }
         ];
       } else {
         welcomeText = `Hello ${user.full_name || user.username}! I am Lara, your Health Assistant.`;
@@ -120,6 +124,7 @@ export const AIChatWidget: React.FC = () => {
   const [showHint, setShowHint] = useState(true);
   const [bookingState, setBookingState] = useState<BookingState>({ step: 'none', data: {} });
   const [adminState, setAdminState] = useState<AdminState>({ step: 'none', data: {} });
+  const [chatMode, setChatMode] = useState<'general' | 'medical'>('general');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -264,6 +269,40 @@ export const AIChatWidget: React.FC = () => {
     // 1. Handle Active Booking Flow
     if (bookingState.step !== 'none') {
       handleBookingFlow(text);
+      return;
+    }
+
+    if (lowerText === 'enter_medical_chat') {
+      setChatMode('medical');
+      addMessage("I'm listening. You can ask me about symptoms, diseases, diet, or general health advice.", 'bot');
+      return;
+    }
+
+    if (chatMode === 'medical') {
+      if (lowerText === 'exit' || lowerText === 'quit' || lowerText === 'menu' || lowerText === 'help') {
+        setChatMode('general');
+        addMessage("Exiting medical chat mode. How else can I help?", 'bot', 'options', [
+          { label: 'ðŸ“… Book Appointment', value: 'book' },
+          { label: 'ðŸ”¢ Track Queue Status', value: 'track' },
+          { label: 'ðŸ©º Health Facts', value: 'tell me about healthy lifestyle' },
+          { label: 'ðŸ’¬ Chat with Lara', value: 'enter_medical_chat' }
+        ]);
+        return;
+      }
+      
+      const medicalResponse = analyzeMedicalQuery(text);
+      if (medicalResponse) {
+          addMessage(medicalResponse, 'bot');
+      } else {
+          // Conversational fallback for medical mode
+          const fallbacks = [
+            "I see. Could you describe that in more detail?",
+            "I'm listening. Please tell me more about your symptoms.",
+            "That sounds concerning. Have you seen a doctor about this yet?",
+            "I am still learning about that specific topic. Try asking about common conditions like Malaria, Diabetes, or Diet."
+          ];
+          addMessage(fallbacks[Math.floor(Math.random() * fallbacks.length)], 'bot');
+      }
       return;
     }
 
@@ -428,9 +467,10 @@ export const AIChatWidget: React.FC = () => {
     if (lowerText.includes('help') || lowerText.includes('what can you do') || lowerText.includes('capabilities')) {
       addMessage("I'm here to help make your hospital visit smoother and healthier. I can:", 'bot');
       setTimeout(() => {
-         addMessage("• Answer medical & health questions\n• Book new appointments\n• Check your position in the queue\n• Help you log in to your dashboard", 'bot', 'options', [
+         addMessage("â€¢ Answer medical & health questions\nâ€¢ Book new appointments\nâ€¢ Check your position in the queue\nâ€¢ Help you log in to your dashboard", 'bot', 'options', [
             { label: 'Start Booking', value: 'book' },
-            { label: 'Ask a Health Question', value: 'tell me a health fact' },
+            { label: 'Health Facts', value: 'tell me a health fact' },
+            { label: 'Chat with Lara', value: 'enter_medical_chat' },
             { label: 'Check Queue', value: 'track' }
          ]);
       }, 500);
@@ -477,7 +517,8 @@ export const AIChatWidget: React.FC = () => {
     // Default Fallback
     addMessage("I'm not sure I understand. I can help with Bookings, Queue Tracking, or answer Health Questions.", 'bot', 'options', [
       { label: 'Book Appointment', value: 'book' },
-      { label: 'Health Advice', value: 'tell me about healthy diet' },
+      { label: 'Health Facts', value: 'tell me about healthy lifestyle' },
+      { label: 'Chat with Lara', value: 'enter_medical_chat' },
       { label: 'Track Queue', value: 'track' },
       { label: 'Login', value: 'login' }
     ]);
@@ -701,7 +742,7 @@ export const AIChatWidget: React.FC = () => {
                
                const ticketCode = result.appointment?.ticket_code || 'CONFIRMED';
                
-               addMessage(`✅ Appointment Confirmed!`, 'bot');
+               addMessage(`âœ… Appointment Confirmed!`, 'bot');
                addMessage(`Patient: ${data.name}`, 'bot');
                addMessage(`Clinic: ${data.clinicName}`, 'bot');
                addMessage(`Date: ${appointmentDate.toLocaleDateString()}`, 'bot');
@@ -833,7 +874,7 @@ export const AIChatWidget: React.FC = () => {
       {/* Floating Toggle Button */}
       {!isOpen && showHint && (
         <div className="mr-4 mb-2 bg-white px-4 py-2 rounded-lg shadow-lg border border-green-100 animate-bounce transition-opacity duration-300">
-           <p className="text-sm font-medium text-gray-700">Need help? Chat with AI Assistant 👋</p>
+           <p className="text-sm font-medium text-gray-700">Need help? Chat with AI Assistant ðŸ‘‹</p>
            {/* Triangle pointer */}
            <div className="absolute -bottom-1 right-8 w-3 h-3 bg-white transform rotate-45 border-b border-r border-green-100"></div>
         </div>

@@ -72,7 +72,7 @@ const MEDICAL_KNOWLEDGE_BASE: MedicalTopic[] = [
   {
     keywords: ['diet', 'food', 'nutrition', 'eating', 'weight loss', 'healthy', 'lifestyle'],
     category: 'lifestyle',
-    response: "A healthy lifestyle is the foundation of good health. \n\n**Dr. Lara's Recommendation:** \n- Fill half your plate with vegetables.\n- Choose whole grains over refined carbs.\n- Drink water instead of sugary sodas.\n- Aim for 30 mins of activity daily.\n- Sleep 7-9 hours."
+    response: "A healthy lifestyle is the foundation of good health. \n\n**Lara's Recommendation:** \n- Fill half your plate with vegetables.\n- Choose whole grains over refined carbs.\n- Drink water instead of sugary sodas.\n- Aim for 30 mins of activity daily.\n- Sleep 7-9 hours."
   },
   {
     keywords: ['exercise', 'workout', 'fitness', 'gym'],
