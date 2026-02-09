@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, X, Send, Bot, User, Loader, MapPin, Clock, CheckCircle } from 'lucide-react';
-import { getClinics, getSlots, bookAppointment, searchAppointments, adminCreateClinic, adminGetUsers, adminApproveUser, getQueueStatus } from '../services/api';
+import { getClinics, getSlots, bookAppointment, searchAppointments, adminCreateClinic, adminGetUsers, adminApproveUser, getQueueStatus, adminCreateUser, adminUpdateUser, adminDeleteUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { analyzeMedicalQuery } from '../utils/medicalKnowledge';
 
@@ -29,11 +29,22 @@ interface BookingState {
 }
 
 interface AdminState {
-  step: 'none' | 'create_clinic_name' | 'create_clinic_location' | 'create_clinic_hours';
+  step: 'none' | 'create_clinic_name' | 'create_clinic_location' | 'create_clinic_hours' | 
+         'create_user_email' | 'create_user_password' | 'create_user_name' | 'create_user_role' | 'create_user_clinic' |
+         'edit_user_search' | 'edit_user_select' | 'edit_user_field' | 'edit_user_value' |
+         'delete_user_search' | 'delete_user_select' | 'delete_user_confirm';
   data: {
-    name?: string;
+    name?: string; // used for clinic name or user name
     location?: string;
     hours?: string;
+    // User data
+    email?: string;
+    password?: string;
+    role?: string;
+    clinicId?: string;
+    targetUserId?: string;
+    targetUser?: any;
+    editField?: string;
   };
 }
 
@@ -79,6 +90,7 @@ export const AIChatWidget: React.FC = () => {
         welcomeText = `Hello Admin ${user.full_name || user.username}! I am Lara. I can help you manage clinics and users.`;
         welcomeOptions = [
           { label: '🏥 Create New Clinic', value: 'admin_create_clinic' },
+          { label: '👥 Manage Users', value: 'admin_manage_users_menu' },
           { label: '👥 Approve Users', value: 'admin_approve_users' },
           { label: '📊 Dashboard', value: 'admin_manage_users' },
           { label: '❓ What I can help with!', value: 'help' }
@@ -265,30 +277,278 @@ export const AIChatWidget: React.FC = () => {
   const handleAdminFlow = async (text: string) => {
     const { step, data } = adminState;
 
+    // --- Clinic Creation Flow ---
     if (step === 'create_clinic_name') {
       setAdminState({ step: 'create_clinic_location', data: { ...data, name: text } });
-      addMessage(`Okay, where is ${text} located?`, 'bot');
-    } else if (step === 'create_clinic_location') {
+      addMessage(`Got it. Where is ${text} located?`, 'bot');
+      return;
+    }
+
+    if (step === 'create_clinic_location') {
       setAdminState({ step: 'create_clinic_hours', data: { ...data, location: text } });
-      addMessage('What are the operating hours? (e.g. 08:00 - 16:00)', 'bot');
-    } else if (step === 'create_clinic_hours') {
-      const clinicData = {
-        name: data.name,
-        location: data.location,
-        active_hours: text,
-        theme_color: '#3b82f6' // Default
-      };
+      addMessage('What are the operating hours? (e.g., 9:00 AM - 5:00 PM)', 'bot');
+      return;
+    }
+
+    if (step === 'create_clinic_hours') {
+      const hours = text;
+      addMessage(`Creating clinic ${data.name}...`, 'bot');
       
-      addMessage(`Creating ${clinicData.name}...`, 'bot');
       try {
-        await adminCreateClinic(clinicData);
-        addMessage(`Success! ${clinicData.name} has been created.`, 'bot');
+        await adminCreateClinic({
+          name: data.name!,
+          location: data.location!,
+          operating_hours: hours
+        });
+        addMessage(`✅ Clinic ${data.name} created successfully!`, 'bot');
         setAdminState({ step: 'none', data: {} });
       } catch (e) {
         addMessage('Error creating clinic. Please try again.', 'bot');
         setAdminState({ step: 'none', data: {} });
       }
+      return;
     }
+
+    // --- Create User Flow ---
+    if (step === 'create_user_email') {
+        if (!text.includes('@')) {
+            addMessage('Please enter a valid email address.', 'bot');
+            return;
+        }
+        setAdminState({ step: 'create_user_password', data: { ...data, email: text } });
+        addMessage('Set a password for this user (or type "generate" for a random one):', 'bot');
+        return;
+    }
+
+    if (step === 'create_user_password') {
+        let password = text;
+        if (text.toLowerCase() === 'generate') {
+            password = Math.random().toString(36).slice(-8) + 'Aa1!';
+            addMessage(`Generated password: ${password}`, 'bot');
+        }
+        setAdminState({ step: 'create_user_name', data: { ...data, password } });
+        addMessage('What is the user\'s full name?', 'bot');
+        return;
+    }
+
+    if (step === 'create_user_name') {
+        setAdminState({ step: 'create_user_role', data: { ...data, name: text } });
+        addMessage('Select a role for this user:', 'bot', 'options', [
+            { label: 'Admin', value: 'admin' },
+            { label: 'Doctor', value: 'doctor' },
+            { label: 'Staff', value: 'staff' }
+        ]);
+        return;
+    }
+
+    if (step === 'create_user_role') {
+        const role = text.toLowerCase();
+        if (!['admin', 'doctor', 'staff'].includes(role)) {
+             addMessage('Please select a valid role.', 'bot');
+             return;
+        }
+
+        const nextData = { ...data, role };
+
+        if (role === 'doctor' || role === 'staff') {
+            setAdminState({ step: 'create_user_clinic', data: nextData });
+            // Fetch clinics to show options
+            const clinicList = clinics.map(c => ({ label: c.name, value: c.id }));
+            addMessage('Select a clinic for this user:', 'bot', 'options', clinicList);
+        } else {
+            // Admin doesn't need a clinic
+            finishCreateUser(nextData);
+        }
+        return;
+    }
+
+    if (step === 'create_user_clinic') {
+        let clinicId = text;
+        // Check if text is a clinic name (fuzzy match)
+        const foundClinic = clinics.find(c => c.name.toLowerCase() === text.toLowerCase() || c.id === text);
+        if (foundClinic) clinicId = foundClinic.id;
+        
+        // If not found and not a UUID, ask again (simplified check)
+        if (!foundClinic && !text.includes('-')) { // loose check for UUID
+             addMessage('Please select a valid clinic from the list.', 'bot');
+             return;
+        }
+
+        finishCreateUser({ ...data, clinicId });
+        return;
+    }
+
+    // --- Edit User Flow ---
+    if (step === 'edit_user_search') {
+        addMessage(`Searching for "${text}"...`, 'bot');
+        try {
+            const users = await adminGetUsers();
+            const matches = users.filter((u: any) => 
+                (u.full_name?.toLowerCase().includes(text.toLowerCase()) || 
+                 u.email?.toLowerCase().includes(text.toLowerCase()))
+            );
+
+            if (matches.length === 0) {
+                addMessage('No users found. Try another name.', 'bot');
+                return;
+            }
+
+            setAdminState({ step: 'edit_user_select', data: { ...data } });
+            addMessage(`Found ${matches.length} users:`, 'bot', 'options', 
+                matches.map((u: any) => ({ label: `${u.full_name} (${u.role})`, value: u.id }))
+            );
+        } catch (e) {
+            addMessage('Error searching users.', 'bot');
+            setAdminState({ step: 'none', data: {} });
+        }
+        return;
+    }
+
+    if (step === 'edit_user_select') {
+        const userId = text;
+        const users = await adminGetUsers(); // Re-fetch or cache ideally
+        const targetUser = users.find((u: any) => u.id === userId);
+        
+        if (!targetUser) {
+            addMessage('User not found. Please try searching again.', 'bot');
+            setAdminState({ step: 'edit_user_search', data: {} });
+            return;
+        }
+
+        setAdminState({ step: 'edit_user_field', data: { ...data, targetUserId: userId, targetUser } });
+        addMessage(`Editing ${targetUser.full_name}. What would you like to update?`, 'bot', 'options', [
+            { label: 'Full Name', value: 'full_name' },
+            { label: 'Role', value: 'role' },
+            { label: 'Clinic', value: 'clinic_id' },
+            { label: 'Password', value: 'password' },
+            { label: 'Cancel', value: 'cancel' }
+        ]);
+        return;
+    }
+
+    if (step === 'edit_user_field') {
+        if (text === 'cancel') {
+            addMessage('Edit cancelled.', 'bot');
+            setAdminState({ step: 'none', data: {} });
+            return;
+        }
+
+        const validFields = ['full_name', 'role', 'clinic_id', 'password'];
+        if (!validFields.includes(text)) {
+            addMessage('Please select a valid field.', 'bot');
+            return;
+        }
+
+        setAdminState({ step: 'edit_user_value', data: { ...data, editField: text } });
+        
+        if (text === 'clinic_id') {
+             addMessage('Select new clinic:', 'bot', 'options', clinics.map(c => ({ label: c.name, value: c.id })));
+        } else if (text === 'role') {
+             addMessage('Select new role:', 'bot', 'options', [
+                { label: 'Admin', value: 'admin' },
+                { label: 'Doctor', value: 'doctor' },
+                { label: 'Staff', value: 'staff' }
+             ]);
+        } else {
+             addMessage(`Enter new value for ${text.replace('_', ' ')}:`, 'bot');
+        }
+        return;
+    }
+
+    if (step === 'edit_user_value') {
+        const value = text;
+        const { targetUserId, editField } = data;
+        
+        addMessage('Updating user...', 'bot');
+        try {
+            const updates: any = {};
+            let password = undefined;
+
+            if (editField === 'password') {
+                updates.password = value;
+            } else {
+                updates[editField!] = value;
+            }
+
+            await adminUpdateUser(targetUserId!, updates);
+            addMessage('✅ User updated successfully!', 'bot');
+            setAdminState({ step: 'none', data: {} });
+        } catch (e) {
+             addMessage('Error updating user.', 'bot');
+             setAdminState({ step: 'none', data: {} });
+        }
+        return;
+    }
+
+    // --- Delete User Flow ---
+    if (step === 'delete_user_search') {
+         addMessage(`Searching for "${text}"...`, 'bot');
+         try {
+             const users = await adminGetUsers();
+             const matches = users.filter((u: any) => 
+                 (u.full_name?.toLowerCase().includes(text.toLowerCase()) || 
+                  u.email?.toLowerCase().includes(text.toLowerCase()))
+             );
+ 
+             if (matches.length === 0) {
+                 addMessage('No users found. Try another name.', 'bot');
+                 return;
+             }
+ 
+             setAdminState({ step: 'delete_user_select', data: { ...data } });
+             addMessage(`Found ${matches.length} users:`, 'bot', 'options', 
+                 matches.map((u: any) => ({ label: `Delete ${u.full_name} (${u.role})`, value: u.id }))
+             );
+         } catch (e) {
+             addMessage('Error searching users.', 'bot');
+             setAdminState({ step: 'none', data: {} });
+         }
+         return;
+    }
+
+    if (step === 'delete_user_select') {
+        const userId = text;
+        setAdminState({ step: 'delete_user_confirm', data: { ...data, targetUserId: userId } });
+        addMessage('⚠️ Are you sure you want to delete this user? This action cannot be undone.', 'bot', 'options', [
+            { label: 'Yes, Delete', value: 'yes_delete' },
+            { label: 'No, Cancel', value: 'cancel' }
+        ]);
+        return;
+    }
+
+    if (step === 'delete_user_confirm') {
+        if (text === 'yes_delete') {
+            addMessage('Deleting user...', 'bot');
+            try {
+                await adminDeleteUser(data.targetUserId!);
+                addMessage('✅ User deleted successfully.', 'bot');
+            } catch (e) {
+                addMessage('Error deleting user.', 'bot');
+            }
+        } else {
+            addMessage('Deletion cancelled.', 'bot');
+        }
+        setAdminState({ step: 'none', data: {} });
+        return;
+    }
+  };
+
+  const finishCreateUser = async (finalData: any) => {
+      addMessage('Creating user...', 'bot');
+      try {
+          await adminCreateUser({
+              email: finalData.email,
+              password: finalData.password,
+              full_name: finalData.name,
+              role: finalData.role,
+              clinic_id: finalData.clinicId,
+              username: finalData.email.split('@')[0] // Fallback username
+          });
+          addMessage(`✅ User ${finalData.name} created successfully!`, 'bot');
+      } catch (e: any) {
+          addMessage(`Error creating user: ${e.message}`, 'bot');
+      }
+      setAdminState({ step: 'none', data: {} });
   };
 
   const processInput = async (text: string, isOption = false) => {
@@ -315,6 +575,38 @@ export const AIChatWidget: React.FC = () => {
         }
         setAdminState({ step: 'create_clinic_name', data: {} });
         addMessage('Let\'s create a new clinic. What is the name of the clinic?', 'bot');
+        return;
+    }
+
+    if (lowerText === 'admin_manage_users_menu') {
+        if (user?.role !== 'admin') return;
+        addMessage('What would you like to do?', 'bot', 'options', [
+            { label: '➕ Create New User', value: 'admin_create_user' },
+            { label: '✏️ Edit Existing User', value: 'admin_edit_user' },
+            { label: '🗑️ Delete User', value: 'admin_delete_user' },
+            { label: '🔙 Back to Menu', value: 'help' }
+        ]);
+        return;
+    }
+
+    if (lowerText === 'admin_create_user') {
+        if (user?.role !== 'admin') return;
+        setAdminState({ step: 'create_user_email', data: {} });
+        addMessage('Let\'s create a new user. What is their email address?', 'bot');
+        return;
+    }
+
+    if (lowerText === 'admin_edit_user') {
+        if (user?.role !== 'admin') return;
+        setAdminState({ step: 'edit_user_search', data: {} });
+        addMessage('Who do you want to edit? Please enter their name or email to search.', 'bot');
+        return;
+    }
+
+    if (lowerText === 'admin_delete_user') {
+        if (user?.role !== 'admin') return;
+        setAdminState({ step: 'delete_user_search', data: {} });
+        addMessage('Who do you want to delete? Please enter their name or email to search.', 'bot');
         return;
     }
 

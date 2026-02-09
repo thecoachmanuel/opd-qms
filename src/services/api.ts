@@ -872,61 +872,25 @@ export const authSignup = async (data: {
 // this part might need a Supabase Edge Function or keeping a small Node server.
 // For now, we will just return a placeholder or use a "rpc" call if we had one.
 export const adminCreateUser = async (data: any) => {
-    // Generate email if not provided (fallback)
-    const email = data.email || `${data.username.toLowerCase().replace(/\s+/g, '')}@lasuth.org.ng`;
-  
-    // 1. Create a temporary client to avoid logging out the admin
-    // This mocks the user signup process (sending email confirmation if enabled)
-    const tempClient = createClient(
-        import.meta.env.VITE_SUPABASE_URL, 
-        import.meta.env.VITE_SUPABASE_ANON_KEY, 
-        {
-            auth: {
-                persistSession: false, // Critical: Do not overwrite admin session
-                autoRefreshToken: false,
-                detectSessionInUrl: false
-            }
-        }
-    );
-
-    // 2. Sign up the user (triggers email confirmation flow)
-    const { data: authData, error: authError } = await tempClient.auth.signUp({
-        email: email,
+    // Use the RPC function which is cleaner and handles auth.users insertion directly
+    // This requires the create_user_with_role function to exist in the database (added in migration)
+    const { data: result, error } = await supabase.rpc('create_user_with_role', {
+        email: data.email || `${data.username.toLowerCase().replace(/\s+/g, '')}@lasuth.org.ng`,
         password: data.password,
-        options: {
-            data: {
-                username: data.username,
-                full_name: data.full_name,
-                role: data.role,
-                clinic_id: data.clinic_id,
-            }
-        }
-    });
-
-    if (authError) throw authError;
-    if (!authData.user) throw new Error('User creation failed');
-
-    // 3. Create Profile (using Admin privileges)
-    // Even if user is unconfirmed, we can create their profile so it exists
-    const { error: profileError } = await supabase.from('profiles').insert({
-        id: authData.user.id,
         username: data.username,
         full_name: data.full_name,
         role: data.role,
         clinic_id: data.clinic_id || null,
-        email: email,
-        phone: data.phone || null,
-        approved: true // Auto-approve the profile (not the email)
+        phone: data.phone || null
     });
 
-    if (profileError) {
-        // If profile creation fails, we should probably warn or try to clean up
-        console.error('Profile creation failed for new user:', profileError);
-        throw profileError;
+    if (error) {
+        console.error('User creation failed:', error);
+        throw error;
     }
 
-    logAudit('create_user', { username: data.username, role: data.role, email_flow: true });
-    return authData.user;
+    logAudit('create_user', { username: data.username, role: data.role, method: 'rpc' });
+    return result;
 };
 
 export const adminUpdateUser = async (id: string, data: any) => {
