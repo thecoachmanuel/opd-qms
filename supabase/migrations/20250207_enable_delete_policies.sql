@@ -2,10 +2,13 @@
 -- This is required for the "Delete Record" functionality in Admin Dashboard to work.
 
 -- Allow deleting appointments
+DROP POLICY IF EXISTS "Appointments deletable by authenticated" ON appointments;
 CREATE POLICY "Appointments deletable by authenticated" ON appointments FOR DELETE TO authenticated USING (true);
 
 -- Allow deleting queue items
+DROP POLICY IF EXISTS "Queue deletable by authenticated" ON queue;
 CREATE POLICY "Queue deletable by authenticated" ON queue FOR DELETE TO authenticated USING (true);
 
 -- Allow deleting patients (optional, but good for cleanup if needed later)
+DROP POLICY IF EXISTS "Patients deletable by authenticated" ON patients;
 CREATE POLICY "Patients deletable by authenticated" ON patients FOR DELETE TO authenticated USING (true);

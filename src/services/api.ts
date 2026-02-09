@@ -149,8 +149,8 @@ export const getAllAppointments = async () => {
 };
 
 export const searchAppointments = async (type: 'ticket' | 'phone', query: string) => {
-  // Use RPC to bypass RLS for public search
-  const { data, error } = await supabase.rpc('search_appointments_public', {
+  // Use enhanced RPC to search both appointments and queue
+  const { data, error } = await supabase.rpc('search_public_status', {
     p_type: type,
     p_query: query
   });

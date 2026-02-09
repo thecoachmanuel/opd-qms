@@ -184,7 +184,8 @@ export const AIChatWidget: React.FC = () => {
         // Find first active one, or fallback to latest scheduled
         const appt = sortedByTime.find((r: any) => activeStatuses.includes(r.status)) || sortedByTime[0];
         
-        addMessage(`Appointment found for ${appt.patient_name || 'Patient'}.`, 'bot');
+        const typeLabel = appt.source === 'queue' ? 'Walk-in Ticket' : 'Appointment';
+        addMessage(`${typeLabel} found for ${appt.patient_name || 'Patient'}.`, 'bot');
         addMessage(`Ticket Number: ${appt.ticket_code}`, 'bot');
         addMessage(`Clinic: ${appt.clinic_name || 'General'}`, 'bot');
         addMessage(`Status: ${appt.status.toUpperCase()}`, 'bot');

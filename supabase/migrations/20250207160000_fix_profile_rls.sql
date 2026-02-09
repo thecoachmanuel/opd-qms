@@ -4,6 +4,8 @@
 -- Drop existing policies that might conflict (or we can just add new ones if we are sure)
 -- To be safe, we'll just add the insert policy which is missing in the initial schema
 
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+
 -- Allow authenticated users to INSERT their own profile
 CREATE POLICY "Users can insert own profile" 
 ON profiles 
