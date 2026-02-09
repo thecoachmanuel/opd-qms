@@ -34,13 +34,14 @@ const KNOWLEDGE_BASE = [
   { keywords: ['parking', 'car', 'park'], answer: 'Visitor parking is available near the main gate. Please follow the security personnel\'s instructions.' },
   { keywords: ['visit', 'visiting'], answer: 'General visiting hours are from 4:00 PM to 6:00 PM daily. Only 2 visitors are allowed per patient at a time.' },
   { keywords: ['payment', 'pay', 'cost', 'fee'], answer: 'We accept cash, POS, and bank transfers. Payment points are available at the main reception hall.' },
+  { keywords: ['who are you', 'your name', 'what are you'], answer: 'I am Lara, your personal Health Assistant here to help you with bookings and queue tracking.' },
 ];
 
 export const AIChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', sender: 'bot', text: 'Hello! I am your LASUTH AI Assistant. How can I help you today?', type: 'options', options: [
+    { id: '1', sender: 'bot', text: 'Hello! I am Lara, your Health Assistant. How can I help you today?', type: 'options', options: [
       { label: '📅 Book Appointment', value: 'book' },
       { label: '🔢 Track Queue Status', value: 'track' },
       { label: '🔑 Login Help', value: 'login' },
@@ -112,7 +113,7 @@ export const AIChatWidget: React.FC = () => {
         if (appt.status === 'booked') {
             const date = new Date(appt.scheduled_time);
             addMessage(`Scheduled for: ${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 'bot');
-        } else if (appt.status === 'waiting') {
+        } else if (appt.status === 'waiting' || appt.status === 'pending') {
             addMessage('You are currently in the queue. Please check the display screens.', 'bot');
         }
       } else {
@@ -537,32 +538,7 @@ export const AIChatWidget: React.FC = () => {
     }
   };
 
-  const checkQueueStatus = async (query: string) => {
-     setIsTyping(true);
-     try {
-         // Auto-detect type
-         const hasLetters = /[a-zA-Z]/.test(query);
-         const type = hasLetters ? 'ticket' : 'phone';
 
-         const results = await searchAppointments(type, query);
-         setIsTyping(false);
-         
-         if (results && results.length > 0) {
-             const appt = results[0];
-             addMessage(`Appointment found for ${appt.patients?.full_name}.`, 'bot');
-             addMessage(`Ticket Number: ${appt.ticket_code}`, 'bot');
-             addMessage(`Status: ${appt.status.toUpperCase()}`, 'bot');
-             if (appt.status === 'pending' || appt.status === 'waiting') {
-                 addMessage('You are in the queue.', 'bot');
-             }
-         } else {
-             addMessage(`No appointment found for "${query}".`, 'bot');
-         }
-     } catch (e) {
-         setIsTyping(false);
-         addMessage('Error checking status.', 'bot');
-     }
-  };
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
@@ -576,7 +552,7 @@ export const AIChatWidget: React.FC = () => {
                 <Bot className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold">LASUTH Assistant</h3>
+                <h3 className="font-bold">Lara</h3>
                 <p className="text-xs text-green-100 flex items-center gap-1">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                   Online
