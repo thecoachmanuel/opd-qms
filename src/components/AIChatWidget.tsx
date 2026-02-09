@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, X, Send, Bot, User, Loader, MapPin, Clock, CheckCircle } from 'lucide-react';
-import { getClinics, getSlots, bookAppointment, searchAppointments } from '../services/api';
+import { getClinics, getSlots, bookAppointment, searchAppointments, adminCreateClinic, adminGetUsers, adminApproveUser, getQueueStatus } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { analyzeMedicalQuery } from '../utils/medicalKnowledge';
 
 interface Message {
   id: string;
@@ -27,6 +28,15 @@ interface BookingState {
   };
 }
 
+interface AdminState {
+  step: 'none' | 'create_clinic_name' | 'create_clinic_location' | 'create_clinic_hours';
+  data: {
+    name?: string;
+    location?: string;
+    hours?: string;
+  };
+}
+
 const KNOWLEDGE_BASE = [
   { keywords: ['location', 'where', 'address', 'find'], answer: 'LASUTH is located at 1-5 Oba Akinjobi Way, Ikeja, Lagos. We are easily accessible from the Ikeja Bus Stop.' },
   { keywords: ['time', 'hour', 'open', 'close', 'operating'], answer: 'Our clinics generally operate from 8:00 AM to 4:00 PM, Monday to Friday. Emergency services (A&E) are available 24/7.' },
@@ -34,12 +44,12 @@ const KNOWLEDGE_BASE = [
   { keywords: ['parking', 'car', 'park'], answer: 'Visitor parking is available near the main gate. Please follow the security personnel\'s instructions.' },
   { keywords: ['visit', 'visiting'], answer: 'General visiting hours are from 4:00 PM to 6:00 PM daily. Only 2 visitors are allowed per patient at a time.' },
   { keywords: ['payment', 'pay', 'cost', 'fee'], answer: 'We accept cash, POS, and bank transfers. Payment points are available at the main reception hall.' },
-  { keywords: ['who are you', 'your name', 'what are you'], answer: 'I am Lara, your personal Health Assistant here to help you with bookings and queue tracking.' },
+  { keywords: ['who are you', 'your name', 'what are you'], answer: 'I am Lara, your personal Health Assistant. I can help with bookings, queue tracking, and answer your medical questions!' },
 ];
 
 export const AIChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', sender: 'bot', text: 'Hello! I am Lara, your Health Assistant. How can I help you today?', type: 'options', options: [
       { label: '📅 Book Appointment', value: 'book' },
@@ -49,10 +59,67 @@ export const AIChatWidget: React.FC = () => {
       { label: '❓ What I can help with!', value: 'help' }
     ]}
   ]);
+
+  // Update welcome message based on user role
+  useEffect(() => {
+    if (authLoading) return;
+
+    let welcomeText = 'Hello! I am Lara, your Health Assistant. How can I help you today?';
+    let welcomeOptions: Message['options'] = [
+      { label: '📅 Book Appointment', value: 'book' },
+      { label: '🔢 Track Queue Status', value: 'track' },
+      { label: '🩺 Health Advice', value: 'tell me about healthy lifestyle' },
+      { label: '🔑 Login Help', value: 'login' },
+      { label: '📝 Sign Up Help', value: 'signup' },
+      { label: '❓ What I can help with!', value: 'help' }
+    ];
+
+    if (user) {
+      if (user.role === 'admin') {
+        welcomeText = `Hello Admin ${user.full_name || user.username}! I am Lara. I can help you manage clinics and users.`;
+        welcomeOptions = [
+          { label: '🏥 Create New Clinic', value: 'admin_create_clinic' },
+          { label: '👥 Approve Users', value: 'admin_approve_users' },
+          { label: '📊 Dashboard', value: 'admin_manage_users' },
+          { label: '❓ What I can help with!', value: 'help' }
+        ];
+      } else if (user.role === 'staff') {
+        welcomeText = `Hello ${user.full_name || user.username}! I am Lara. Ready to assist with queue management.`;
+        welcomeOptions = [
+          { label: '🔢 Check Queue Status', value: 'staff_check_queue' },
+          { label: '📅 Book Appointment', value: 'book' },
+          { label: '❓ What I can help with!', value: 'help' }
+        ];
+      } else if (user.role === 'doctor') {
+        welcomeText = `Hello Dr. ${user.full_name || user.username}! I am Lara. Ready to assist you.`;
+        welcomeOptions = [
+          { label: '👨‍⚕️ Check My Queue', value: 'staff_check_queue' },
+          { label: '❓ What I can help with!', value: 'help' }
+        ];
+      } else {
+        welcomeText = `Hello ${user.full_name || user.username}! I am Lara, your Health Assistant.`;
+      }
+    }
+
+    setMessages(prev => {
+      // Only update if it's the initial message
+      if (prev.length === 1 && prev[0].id === '1') {
+        return [{
+          id: '1',
+          sender: 'bot',
+          text: welcomeText,
+          type: 'options',
+          options: welcomeOptions
+        }];
+      }
+      return prev;
+    });
+  }, [user, authLoading]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showHint, setShowHint] = useState(true);
   const [bookingState, setBookingState] = useState<BookingState>({ step: 'none', data: {} });
+  const [adminState, setAdminState] = useState<AdminState>({ step: 'none', data: {} });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -61,6 +128,14 @@ export const AIChatWidget: React.FC = () => {
 
   // Hide on TV Display or specific pages if needed
   if (location.pathname.startsWith('/display')) return null;
+
+  useEffect(() => {
+    // Auto-hide hint after 5 seconds
+    const timer = setTimeout(() => {
+      setShowHint(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -147,14 +222,118 @@ export const AIChatWidget: React.FC = () => {
     }, 600);
   };
 
+  const handleAdminFlow = async (text: string) => {
+    const { step, data } = adminState;
+
+    if (step === 'create_clinic_name') {
+      setAdminState({ step: 'create_clinic_location', data: { ...data, name: text } });
+      addMessage(`Okay, where is ${text} located?`, 'bot');
+    } else if (step === 'create_clinic_location') {
+      setAdminState({ step: 'create_clinic_hours', data: { ...data, location: text } });
+      addMessage('What are the operating hours? (e.g. 08:00 - 16:00)', 'bot');
+    } else if (step === 'create_clinic_hours') {
+      const clinicData = {
+        name: data.name,
+        location: data.location,
+        active_hours: text,
+        theme_color: '#3b82f6' // Default
+      };
+      
+      addMessage(`Creating ${clinicData.name}...`, 'bot');
+      try {
+        await adminCreateClinic(clinicData);
+        addMessage(`Success! ${clinicData.name} has been created.`, 'bot');
+        setAdminState({ step: 'none', data: {} });
+      } catch (e) {
+        addMessage('Error creating clinic. Please try again.', 'bot');
+        setAdminState({ step: 'none', data: {} });
+      }
+    }
+  };
+
   const processInput = async (text: string, isOption = false) => {
     const lowerText = text.toLowerCase();
     setIsTyping(false);
+
+    // 0. Handle Admin Flow
+    if (adminState.step !== 'none') {
+      handleAdminFlow(text);
+      return;
+    }
 
     // 1. Handle Active Booking Flow
     if (bookingState.step !== 'none') {
       handleBookingFlow(text);
       return;
+    }
+
+    // Role-Based Commands & Options
+    if (lowerText === 'admin_create_clinic') {
+        if (user?.role !== 'admin') {
+            addMessage('You do not have permission to perform this action.', 'bot');
+            return;
+        }
+        setAdminState({ step: 'create_clinic_name', data: {} });
+        addMessage('Let\'s create a new clinic. What is the name of the clinic?', 'bot');
+        return;
+    }
+
+    if (lowerText === 'admin_approve_users') {
+        if (user?.role !== 'admin') return;
+        addMessage('Fetching pending users...', 'bot');
+        try {
+            const users = await adminGetUsers();
+            const pending = users?.filter((u: any) => !u.approved) || [];
+            if (pending.length === 0) {
+                addMessage('No pending users found.', 'bot');
+            } else {
+                addMessage(`Found ${pending.length} pending users:`, 'bot', 'options', 
+                    pending.map((u: any) => ({ label: `Approve ${u.full_name} (${u.role})`, value: `approve_user_${u.id}` }))
+                );
+            }
+        } catch (e) {
+            addMessage('Error fetching users.', 'bot');
+        }
+        return;
+    }
+
+    if (lowerText.startsWith('approve_user_')) {
+        if (user?.role !== 'admin') return;
+        const userId = lowerText.replace('approve_user_', '');
+        addMessage('Approving user...', 'bot');
+        try {
+            await adminApproveUser(userId);
+            addMessage('User approved successfully!', 'bot');
+        } catch (e) {
+            addMessage('Error approving user.', 'bot');
+        }
+        return;
+    }
+
+    if (lowerText === 'admin_manage_users') {
+        if (user?.role !== 'admin') return;
+        addMessage('User management is best done on the full dashboard. Shall I take you there?', 'bot', 'options', [
+            { label: 'Yes, Go to Dashboard', value: 'go_dashboard' },
+            { label: 'No, stay here', value: 'cancel' }
+        ]);
+        return;
+    }
+
+    if (lowerText === 'staff_check_queue') {
+         if (!user?.clinic_id) {
+             addMessage('You are not assigned to any clinic.', 'bot');
+             return;
+         }
+         addMessage('Fetching queue status...', 'bot');
+         try {
+             const status = await getQueueStatus(user.clinic_id);
+             addMessage(`Queue Status for your clinic:`, 'bot');
+             addMessage(`Waiting: ${status.totalWaiting}`, 'bot');
+             addMessage(`Current Serving: ${status.currentServing ? status.currentServing.ticket_number : 'None'}`, 'bot');
+         } catch (e) {
+             addMessage('Error fetching queue status.', 'bot');
+         }
+         return;
     }
 
     // 2. Intent Recognition
@@ -220,6 +399,13 @@ export const AIChatWidget: React.FC = () => {
        return;
     }
 
+    // 3. Medical Knowledge Engine
+    const medicalResponse = analyzeMedicalQuery(text);
+    if (medicalResponse) {
+        addMessage(medicalResponse, 'bot');
+        return;
+    }
+
     // Knowledge Base Search
     const kbMatch = KNOWLEDGE_BASE.find(item => item.keywords.some(k => lowerText.includes(k)));
     if (kbMatch) {
@@ -240,10 +426,11 @@ export const AIChatWidget: React.FC = () => {
     }
 
     if (lowerText.includes('help') || lowerText.includes('what can you do') || lowerText.includes('capabilities')) {
-      addMessage("I'm here to help make your hospital visit smoother. I can:", 'bot');
+      addMessage("I'm here to help make your hospital visit smoother and healthier. I can:", 'bot');
       setTimeout(() => {
-         addMessage("• Book new appointments\n• Check your position in the queue\n• Help you log in to your dashboard\n• Answer basic questions about clinics", 'bot', 'options', [
+         addMessage("• Answer medical & health questions\n• Book new appointments\n• Check your position in the queue\n• Help you log in to your dashboard", 'bot', 'options', [
             { label: 'Start Booking', value: 'book' },
+            { label: 'Ask a Health Question', value: 'tell me a health fact' },
             { label: 'Check Queue', value: 'track' }
          ]);
       }, 500);
@@ -288,11 +475,11 @@ export const AIChatWidget: React.FC = () => {
     }
 
     // Default Fallback
-    addMessage("I'm not sure I understand. Would you like to:", 'bot', 'options', [
+    addMessage("I'm not sure I understand. I can help with Bookings, Queue Tracking, or answer Health Questions.", 'bot', 'options', [
       { label: 'Book Appointment', value: 'book' },
+      { label: 'Health Advice', value: 'tell me about healthy diet' },
       { label: 'Track Queue', value: 'track' },
-      { label: 'Login', value: 'login' },
-      { label: 'Sign Up', value: 'signup' }
+      { label: 'Login', value: 'login' }
     ]);
   };
 
