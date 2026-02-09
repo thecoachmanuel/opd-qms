@@ -41,6 +41,8 @@ export const AIChatWidget: React.FC = () => {
     { id: '1', sender: 'bot', text: 'Hello! I am your LASUTH AI Assistant. How can I help you today?', type: 'options', options: [
       { label: '📅 Book Appointment', value: 'book' },
       { label: '🔢 Track Queue Status', value: 'track' },
+      { label: '🔑 Login Help', value: 'login' },
+      { label: '📝 Sign Up Help', value: 'signup' },
       { label: '❓ Hospital Info', value: 'help' }
     ]}
   ]);
@@ -117,6 +119,19 @@ export const AIChatWidget: React.FC = () => {
         addMessage('I can take you to the login page.', 'bot');
         setTimeout(() => {
           navigate('/login');
+          setIsOpen(false);
+        }, 1500);
+      }
+      return;
+    }
+
+    if (lowerText.includes('signup') || lowerText.includes('sign up') || lowerText.includes('register') || lowerText.includes('create account')) {
+      if (user) {
+         addMessage(`You are already registered and logged in as ${user.full_name}.`, 'bot');
+      } else {
+        addMessage('I can take you to the registration page.', 'bot');
+        setTimeout(() => {
+          navigate('/signup');
           setIsOpen(false);
         }, 1500);
       }
@@ -226,7 +241,8 @@ export const AIChatWidget: React.FC = () => {
     addMessage("I'm not sure I understand. Would you like to:", 'bot', 'options', [
       { label: 'Book Appointment', value: 'book' },
       { label: 'Track Queue', value: 'track' },
-      { label: 'Login', value: 'login' }
+      { label: 'Login', value: 'login' },
+      { label: 'Sign Up', value: 'signup' }
     ]);
   };
 
