@@ -544,53 +544,14 @@ export const updateQueueStatus = async (id: string, status: 'serving' | 'done' |
                 
             if (appError) {
                 console.error('Failed to sync appointment status:', appError);
+                // We don't throw here to avoid rolling back the queue status update
+                // forcing the doctor to retry "Complete" when the queue is already "done" would be confusing.
             }
         }
-
-        // Record Consultation History (Permanent Record)
-        if (status === 'done' && data) {
-             const consultationData = {
-                 doctor_id: userId || data.doctor_id,
-                 clinic_id: data.clinic_id,
-                 patient_name: data.patient_name || 'Unknown',
-                 ticket_number: data.ticket_number,
-                 consultation_notes: notes || data.consultation_notes,
-                 arrival_time: data.arrival_time || data.created_at,
-                 start_time: data.service_start_time,
-                 end_time: data.service_end_time || new Date().toISOString()
-             };
-             
-             // Fire and forget - don't block UI
-             supabase.from('consultations').insert(consultationData).then(({ error }) => {
-                 if (error) console.error('Failed to record consultation history:', error);
-             });
-        }
-
     } catch (syncErr) {
         console.error('Unexpected error during appointment sync:', syncErr);
     }
 
-    return data;
-};
-
-export const getDoctorConsultations = async (doctorId: string) => {
-    const { data, error } = await supabase
-        .from('consultations')
-        .select('*')
-        .eq('doctor_id', doctorId)
-        .order('created_at', { ascending: false });
-        
-    if (error) throw error;
-    return data;
-};
-
-export const getClinicAnalytics = async (startDate?: string, endDate?: string) => {
-    const { data, error } = await supabase.rpc('get_clinic_analytics', {
-        start_date: startDate,
-        end_date: endDate
-    });
-    
-    if (error) throw error;
     return data;
 };
 

@@ -19,8 +19,8 @@ A modern, high-fidelity queue management and appointment booking solution design
 
 ### 👥 Role-Based Dashboards & Security
 - **Strict Access Control:** Unapproved users are automatically redirected to an "Awaiting Approval" page and cannot access dashboards.
-- **Admin Dashboard:** Centralized control for managing clinics, users, system settings, and **comprehensive analytics (Average Wait Time & Consultation Duration tracking)**.
-- **Doctor Dashboard:** Clinicians can view their queue, call patients, **record consultation notes**, and **access their personal consultation history**.
+- **Admin Dashboard:** Centralized control for managing clinics, users, system settings, and analytics.
+- **Doctor Dashboard:** Clinicians can view their queue, call patients, and manage consultation status.
 - **Staff Dashboard:** Front-desk tools for checking in patients (including Walk-ins), managing the queue, and handling inquiries.
 
 ### 📺 Real-Time Visualization & Audio

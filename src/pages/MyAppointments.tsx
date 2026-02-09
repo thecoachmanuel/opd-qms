@@ -63,7 +63,7 @@ export const MyAppointments: React.FC = () => {
 
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
                     <form onSubmit={handleSearch} className="space-y-4">
-                        <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex gap-2">
                             <div className="relative flex-grow">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Search className="h-5 w-5 text-gray-400" />
@@ -80,7 +80,7 @@ export const MyAppointments: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                             >
                                 {loading ? 'Searching...' : 'Search'}
                             </button>

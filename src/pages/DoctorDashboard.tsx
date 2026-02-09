@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { getClinics, getQueueStatus, updateQueueStatus, getAppointmentById, getPatientHistory, ensureUserProfile, getDoctorConsultations } from '../services/api';
-import { User, FileText, CheckCircle, Clock, Activity, History, ClipboardList, Stethoscope } from 'lucide-react';
+import { getClinics, getQueueStatus, updateQueueStatus, getAppointmentById, getPatientHistory, ensureUserProfile } from '../services/api';
+import { User, FileText, CheckCircle, Clock, Activity, History } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const DoctorDashboard: React.FC = () => {
@@ -12,8 +12,6 @@ export const DoctorDashboard: React.FC = () => {
     });
     const [currentPatient, setCurrentPatient] = useState<any>(null);
     const [waitingQueue, setWaitingQueue] = useState<any[]>([]);
-    const [viewMode, setViewMode] = useState<'queue' | 'history'>('queue');
-    const [myConsultations, setMyConsultations] = useState<any[]>([]);
 
     useEffect(() => {
         if (selectedClinic) {
@@ -39,22 +37,6 @@ export const DoctorDashboard: React.FC = () => {
     useEffect(() => {
         getClinics().then(setClinics);
     }, []);
-
-    useEffect(() => {
-        if (viewMode === 'history' && user) {
-            loadConsultationHistory();
-        }
-    }, [viewMode, user]);
-
-    const loadConsultationHistory = async () => {
-        if (!user) return;
-        try {
-            const data = await getDoctorConsultations(user.id);
-            setMyConsultations(data || []);
-        } catch (err) {
-            console.error('Failed to load consultation history', err);
-        }
-    };
 
     useEffect(() => {
         if (user?.clinic_id) {
@@ -244,84 +226,15 @@ export const DoctorDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
-                    <div className="flex justify-between items-center mb-8 flex-col sm:flex-row gap-4 sm:gap-0">
-                     <div className="text-center sm:text-left">
+                <div className="flex justify-between items-center mb-8">
+                     <div>
                         <h1 className="text-3xl font-bold text-gray-800">Doctor Dashboard</h1>
-                        <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1">
                             <p className="text-gray-600">Clinic: <span className="font-semibold text-blue-600">{clinics.find(c => c.id === selectedClinic)?.name}</span></p>
                         </div>
                     </div>
-                    <div className="flex bg-white p-1 rounded-lg border border-gray-200 shadow-sm w-full sm:w-auto">
-                        <button 
-                            onClick={() => setViewMode('queue')}
-                            className={`flex-1 sm:flex-none justify-center px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-all ${viewMode === 'queue' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <Stethoscope className="w-4 h-4" />
-                            Active Queue
-                        </button>
-                        <button 
-                            onClick={() => setViewMode('history')}
-                            className={`flex-1 sm:flex-none justify-center px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-all ${viewMode === 'history' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <ClipboardList className="w-4 h-4" />
-                            My Consultations
-                        </button>
-                    </div>
                 </div>
 
-                {viewMode === 'history' ? (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-gray-900">Consultation History</h3>
-                            <button onClick={loadConsultationHistory} className="text-sm text-blue-600 hover:underline">Refresh</button>
-                        </div>
-                        {myConsultations.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date/Time</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticket</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {myConsultations.map((record) => (
-                                            <tr key={record.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {new Date(record.created_at).toLocaleString()}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {record.patient_name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">
-                                                        {record.ticket_number}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={record.consultation_notes}>
-                                                    {record.consultation_notes || '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {record.start_time && record.end_time ? 
-                                                        `${Math.round((new Date(record.end_time).getTime() - new Date(record.start_time).getTime()) / 60000)} mins` 
-                                                        : '-'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="p-12 text-center text-gray-500">
-                                <ClipboardList className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                                <p>No consultation records found yet.</p>
-                            </div>
-                        )}
-                    </div>
-                ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column: Patient Details */}
                 <div className="lg:col-span-2 space-y-6">
@@ -448,7 +361,6 @@ export const DoctorDashboard: React.FC = () => {
 
                 {/* Right Column: History & Vitals */}
                 <div className="space-y-6">
-
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                             <History className="h-5 w-5 text-gray-500" />
@@ -493,9 +405,8 @@ export const DoctorDashboard: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                </div>
-                )}
             </div>
+        </div>
         </div>
     );
 };

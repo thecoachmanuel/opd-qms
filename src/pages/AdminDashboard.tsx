@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { getAllAppointments, adminGetClinics, adminCreateClinic, adminUpdateClinic, adminDeleteClinic, adminGetUsers, adminCreateUser, adminUpdateUser, adminDeleteUser, adminGetAuditLogs, adminClearAuditLogs, adminApproveUser, adminGetSettings, adminUpdateSettings, adminGetDoctorStats, adminGetQueueHistory, adminDeleteAppointment, getClinicAnalytics } from '../services/api';
-import { Calendar, Search, BarChart2, PieChart, Users, CheckSquare, XCircle, Download, Filter, FileText as FileIcon, Globe, Trash2, Clock, Activity } from 'lucide-react';
+import { getAllAppointments, adminGetClinics, adminCreateClinic, adminUpdateClinic, adminDeleteClinic, adminGetUsers, adminCreateUser, adminUpdateUser, adminDeleteUser, adminGetAuditLogs, adminClearAuditLogs, adminApproveUser, adminGetSettings, adminUpdateSettings, adminGetDoctorStats, adminGetQueueHistory, adminDeleteAppointment } from '../services/api';
+import { Calendar, Search, BarChart2, PieChart, Users, CheckSquare, XCircle, Download, Filter, FileText as FileIcon, Globe, Trash2 } from 'lucide-react';
 import Avatar from '../components/Avatar';
 import { SiteSettingsEditor } from '../components/SiteSettingsEditor';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
@@ -44,7 +44,6 @@ export const AdminDashboard: React.FC = () => {
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'staff' | 'doctor'>('all');
     const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'approved' | 'pending'>('all');
-    const [advancedAnalytics, setAdvancedAnalytics] = useState<any>(null);
     
     const pendingCount = users.filter(u => !u.approved).length;
 
@@ -68,13 +67,10 @@ export const AdminDashboard: React.FC = () => {
 
     const loadData = useCallback(async () => {
         try {
-            const [apptData, queueData, analyticsData] = await Promise.all([
+            const [apptData, queueData] = await Promise.all([
                 getAllAppointments(),
-                adminGetQueueHistory(),
-                getClinicAnalytics()
+                adminGetQueueHistory()
             ]);
-
-            setAdvancedAnalytics(analyticsData);
 
             let combined: any[] = [];
             
@@ -529,31 +525,28 @@ export const AdminDashboard: React.FC = () => {
                     <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
                          <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Completed</p>
+                                <p className="text-sm text-gray-500">No. of Completed Appointments</p>
                                 <p className="text-3xl font-bold text-gray-900">{completed}</p>
                             </div>
                             <CheckSquare className="h-10 w-10 text-green-500" />
                         </div>
                     </div>
-                    
-                    {/* Advanced Analytics Cards */}
-                     <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
+                    <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
                          <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Avg. Wait Time</p>
-                                <p className="text-3xl font-bold text-gray-900">{advancedAnalytics?.avg_wait_time_minutes ? Math.round(advancedAnalytics.avg_wait_time_minutes) : 0}<span className="text-sm font-normal text-gray-500"> mins</span></p>
+                                <p className="text-sm text-gray-500">No. of Waiting/In-Progress</p>
+                                <p className="text-3xl font-bold text-gray-900">{waiting}</p>
                             </div>
-                            <Clock className="h-10 w-10 text-indigo-500" />
+                            <Users className="h-10 w-10 text-yellow-500" />
                         </div>
                     </div>
-
-                     <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-purple-500">
+                     <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
                          <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Avg. Consult Time</p>
-                                <p className="text-3xl font-bold text-gray-900">{advancedAnalytics?.avg_consultation_time_minutes ? Math.round(advancedAnalytics.avg_consultation_time_minutes) : 0}<span className="text-sm font-normal text-gray-500"> mins</span></p>
+                                <p className="text-sm text-gray-500">No. of Cancelled/No Show</p>
+                                <p className="text-3xl font-bold text-gray-900">{cancelled + noShow}</p>
                             </div>
-                            <Activity className="h-10 w-10 text-purple-500" />
+                            <XCircle className="h-10 w-10 text-red-500" />
                         </div>
                     </div>
                 </div>

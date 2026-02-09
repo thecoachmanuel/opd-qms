@@ -239,7 +239,7 @@ export const StaffDashboard: React.FC = () => {
                                         <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
                                             <div>
                                                 <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Current Patient</span>
-                                                <span className={`text-4xl sm:text-5xl font-bold block mt-1 ${ticketStyle(selectedClinic)}`}>{item.ticket_number}</span>
+                                                <span className={`text-5xl font-bold block mt-1 ${ticketStyle(selectedClinic)}`}>{item.ticket_number}</span>
                                                 <span className="text-lg text-gray-700 mt-2 block">{item.patient_name || 'Anonymous'}</span>
                                             </div>
                                             <div className="bg-white px-3 py-1 rounded-full text-sm font-medium text-green-800 border border-green-200 shadow-sm flex flex-col items-end w-full sm:w-auto">
